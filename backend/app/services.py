@@ -42,6 +42,8 @@ class PortfolioService:
 RECENT CONVERSATION:
 {history_text or "No previous conversation."}
 
+{build_jd_context(jd_context)}
+
 RECRUITER QUESTION:
 {message}
 """
