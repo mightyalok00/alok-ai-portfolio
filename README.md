@@ -156,6 +156,8 @@ The JD Analyzer is intentionally **evidence-first and deterministic**:
 This separation keeps the recruiter workflow grounded in `backend/data/candidate.json` and prevents local model output from inventing qualifications.
 ## Verification
 
+The GitHub Actions workflow validates the backend test suite and frontend production build on pushes and pull requests to `main`.
+
 Backend tests:
 
 ```powershell
@@ -170,10 +172,33 @@ cd frontend
 npm run build
 ```
 
+## Product workflow
+
+The recruiter workflow is designed as one evidence chain rather than independent tools:
+
+```text
+Job Description
+      ↓
+Requirement Match
+      ↓
+Relevant Projects
+      ↓
+Not Verified
+      ↓
+Traceable Evidence
+      ↓
+Discuss with AI
+      ↓
+Grounded Recruiter Chat
+```
+
+When a JD is analyzed, its deterministic result can be loaded into AI Chat as structured context. Follow-up answers must preserve the analyzer's documented-match and not-verified classifications.
+
 ## Roadmap
 
 - GitHub repository evidence ingestion
 - richer project metrics backed by source evidence
+- JD-aware recruiter interview sessions
 - optional recruiter resume download
 - optional voice interface
 - deployment with a cloud-hosted model when laptop-local Ollama is unavailable
