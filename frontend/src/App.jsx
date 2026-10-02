@@ -114,6 +114,9 @@ export default function App() {
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [apiHealth, setApiHealth] = useState(null);
   const [jdContext, setJdContext] = useState(null);
+  const [recruiterSession, setRecruiterSession] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("alok-recruiter-session") || "null"); } catch { return null; }
+  });
   const [jdError, setJdError] = useState("");
   const bottom = useRef(null);
 
@@ -131,18 +134,28 @@ export default function App() {
 
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  useEffect(() => {
+    if (recruiterSession) localStorage.setItem("alok-recruiter-session", JSON.stringify(recruiterSession));
+    else localStorage.removeItem("alok-recruiter-session");
+  }, [recruiterSession]);
+
+  useEffect(() => {
+    if (recruiterSession?.job_description) setJd(recruiterSession.job_description);
+  }, []);
+
   async function sendMessage(value = input) {
     const message = value.trim();
     if (!message || loading) return;
     const history = messages.slice(-8);
-    const jdAnalysis = jdContext
+    const activeJd = recruiterSession || jdContext;
+    const jdAnalysis = activeJd
       ? {
-          job_description: jdContext.job_description,
-          matched_documented_skills: jdContext.result.matched_documented_skills || [],
-          relevant_projects: jdContext.result.relevant_projects || [],
-          requested_but_not_verified: jdContext.result.requested_but_not_verified || [],
-          evidence: jdContext.result.evidence || [],
-          notes: jdContext.result.notes || [],
+          job_description: activeJd.job_description,
+          matched_documented_skills: activeJd.result.matched_documented_skills || [],
+          relevant_projects: activeJd.result.relevant_projects || [],
+          requested_but_not_verified: activeJd.result.requested_but_not_verified || [],
+          evidence: activeJd.result.evidence || [],
+          notes: activeJd.result.notes || [],
         }
       : null;
     setMessages((items) => [...items, { role: "user", content: message }, { role: "assistant", content: "" }]);
@@ -192,6 +205,7 @@ export default function App() {
     setJdError("");
     setJdResult(null);
     setJdContext(null);
+    setRecruiterSession(null);
   }
 
   function useSampleJd() {
@@ -217,6 +231,8 @@ export default function App() {
         throw new Error(payload.detail?.message || payload.detail || `HTTP ${response.status}`);
       }
       setJdResult(payload);
+      setRecruiterSession({ job_description: jd, result: payload });
+      setJdContext({ job_description: jd, result: payload });
     } catch (error) {
       setJdResult(null);
       setJdError(error.message);
@@ -228,7 +244,19 @@ export default function App() {
       const response = await fetch(`${API}/api/interview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ focus, previous_answer: answer, history: messages.slice(-6) }),
+        body: JSON.stringify({
+          focus,
+          previous_answer: answer,
+          history: messages.slice(-6),
+          jd_context: recruiterSession ? {
+            job_description: recruiterSession.job_description,
+            matched_documented_skills: recruiterSession.result.matched_documented_skills || [],
+            relevant_projects: recruiterSession.result.relevant_projects || [],
+            requested_but_not_verified: recruiterSession.result.requested_but_not_verified || [],
+            evidence: recruiterSession.result.evidence || [],
+            notes: recruiterSession.result.notes || [],
+          } : null,
+        }),
       });
       setInterview(await response.json());
       setInterviewAnswer("");
@@ -246,6 +274,7 @@ export default function App() {
   const skills = candidate?.skills || [];
   const featured = projects.slice(0, 3);
   const jdInputState = classifyJdInput(jd);
+  const activeSession = recruiterSession || jdContext;
 
   function openSkillEvidence(skill) {
     const evidence = projects.filter((p) =>
@@ -308,6 +337,7 @@ export default function App() {
       {tab === "recruiter" && (
         <section className="page-section recruiter-page">
           <div className="section-heading"><div><span className="section-kicker">RECRUITER MODE</span><h2>Candidate snapshot</h2><p className="tool-intro">A compact evidence-first view of the portfolio.</p></div></div>
+          {activeSession && <div className="session-banner"><div><span className="section-kicker">ACTIVE RECRUITER SESSION</span><strong>JD analysis loaded</strong><small>{activeSession.result.matched_documented_skills?.length || 0} documented matches • {activeSession.result.relevant_projects?.length || 0} relevant projects • {activeSession.result.requested_but_not_verified?.length || 0} not verified</small></div><div><button className="secondary" onClick={() => setTab("jd")}>View analysis</button><button className="text-button" onClick={() => setRecruiterSession(null)}>Clear session</button></div></div>}
           <div className="recruiter-grid">
             <article className="recruiter-profile-card"><img src="/profile.jpg" alt="Alok Agarwal" /><div><span className="section-kicker">CANDIDATE</span><h3>{candidate?.name || "Alok Agarwal"}</h3><p>{candidate?.headline || "Data Scientist & Python Developer"}</p><p className="muted">{candidate?.summary}</p></div></article>
             <div className="recruiter-actions">
@@ -331,7 +361,7 @@ export default function App() {
         </section>
       )}
 
-      {tab === "projects" && <section className="page-section"><div className="section-heading"><div><span className="section-kicker">PROJECT EXPLORER</span><h2>Portfolio projects</h2><p className="tool-intro">Open a project for its documented evidence and source links.</p></div></div><div className="project-grid">{projects.map((project) => <ProjectCard key={project.name} project={project} onOpen={setSelectedProject} />)}</div></section>}
+      {tab === "projects" && <section className="page-section"><div className="section-heading"><div><span className="section-kicker">PROJECT EXPLORER</span><h2>Portfolio projects</h2><p className="tool-intro">Open a project for its documented evidence and source links.</p></div></div>{activeSession && <div className="session-banner compact-session"><div><span className="section-kicker">ACTIVE JD</span><strong>{activeSession.result.relevant_projects?.length || 0} relevant projects</strong><small>Projects selected by the deterministic JD analyzer.</small></div><button className="text-button" onClick={() => setTab("jd")}>Open JD analysis →</button></div>}<div className="project-grid">{(activeSession?.result?.relevant_projects?.length ? projects.filter((project) => activeSession.result.relevant_projects.includes(project.name)) : projects).map((project) => <ProjectCard key={project.name} project={project} onOpen={setSelectedProject} />)}</div></section>}
 
       {tab === "chat" && (
         <section className="chat-workspace">
@@ -340,7 +370,7 @@ export default function App() {
               <div>
                 <strong>Recruiter Assistant</strong>
                 <span>Evidence-grounded • Local Ollama • No hiring decision</span>
-                {jdContext && <div className="chat-context-row"><small className="chat-context-badge">JD context active • {jdContext.result.relevant_projects?.length || 0} relevant projects</small><button className="text-button chat-context-clear" type="button" onClick={() => setJdContext(null)}>Clear JD context</button></div>}
+                {jdContext && <div className="chat-context-row"><small className="chat-context-badge">JD context active • {jdContext.result.relevant_projects?.length || 0} relevant projects</small><button className="text-button chat-context-clear" type="button" onClick={() => { setJdContext(null); setRecruiterSession(null); }}>Clear JD session</button></div>}
               </div>
               <button className="icon-button" type="button" onClick={clearChat} title="Clear conversation"><Trash2 size={17} /></button>
             </div>
@@ -577,6 +607,7 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     setJdContext({ job_description: jd, result: jdResult });
+                    setRecruiterSession({ job_description: jd, result: jdResult });
                     setTab("chat");
                     setMessages((items) => [...items, { role: "assistant", content: "JD context loaded. I can now answer follow-up questions using this analysis, the documented portfolio evidence, and the explicitly unverified requirements." }]);
                   }}
@@ -590,7 +621,7 @@ export default function App() {
       )}
 
       {tab === "interview" && (
-        <section className="page-section tool-page"><div className="section-heading"><div><span className="section-kicker">INTERVIEW MODE</span><h2>Practice from your portfolio</h2></div></div><div className="focus-row">{["machine learning", "Python", "SQL", "GenAI", "FastAPI"].map((item) => <button key={item} className={focus === item ? "selected" : ""} onClick={() => setFocus(item)}>{item}</button>)}</div><button className="primary" onClick={() => startInterview()} disabled={loading}><UserRound size={17} /> Generate question</button>{interview && <div className="interview-card"><span className="section-kicker">QUESTION</span><h3>{interview.question}</h3><p><strong>Why it matters:</strong> {interview.why_it_matters}</p><textarea className="answer-box" value={interviewAnswer} onChange={(e) => setInterviewAnswer(e.target.value)} placeholder="Write your answer here..." /><button className="secondary" onClick={() => startInterview(interviewAnswer)} disabled={loading || !interviewAnswer.trim()}>Evaluate & generate follow-up</button>{interview.evaluation && <div className="evaluation"><strong>Coaching:</strong><p>{interview.evaluation}</p><strong>Follow-up:</strong><p>{interview.follow_up}</p></div>}</div>}</section>
+        <section className="page-section tool-page"><div className="section-heading"><div><span className="section-kicker">INTERVIEW MODE</span><h2>{activeSession ? "Interview for the active JD" : "Practice from your portfolio"}</h2><p className="tool-intro">{activeSession ? "Questions are grounded in the active JD analysis and documented portfolio evidence." : "Practice with documented portfolio evidence."}</p></div></div>{activeSession && <div className="session-banner compact-session"><div><span className="section-kicker">ACTIVE JD SESSION</span><strong>{activeSession.result.matched_documented_skills?.slice(0, 4).join(" • ") || "JD requirements loaded"}</strong><small>Interview coaching will use the deterministic JD analysis as context.</small></div><button className="text-button" onClick={() => setTab("jd")}>Review requirements →</button></div>}<div className="focus-row">{["machine learning", "Python", "SQL", "GenAI", "FastAPI"].map((item) => <button key={item} className={focus === item ? "selected" : ""} onClick={() => setFocus(item)}>{item}</button>)}</div><button className="primary" onClick={() => startInterview()} disabled={loading}><UserRound size={17} /> Generate question</button>{interview && <div className="interview-card"><span className="section-kicker">QUESTION</span><h3>{interview.question}</h3><p><strong>Why it matters:</strong> {interview.why_it_matters}</p><textarea className="answer-box" value={interviewAnswer} onChange={(e) => setInterviewAnswer(e.target.value)} placeholder="Write your answer here..." /><button className="secondary" onClick={() => startInterview(interviewAnswer)} disabled={loading || !interviewAnswer.trim()}>Evaluate & generate follow-up</button>{interview.evaluation && <div className="evaluation"><strong>Coaching:</strong><p>{interview.evaluation}</p><strong>Follow-up:</strong><p>{interview.follow_up}</p></div>}</div>}</section>
       )}
 
       {selectedSkill && <div className="modal-backdrop" onClick={() => setSelectedSkill(null)}>
