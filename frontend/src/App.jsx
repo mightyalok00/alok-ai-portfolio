@@ -11,6 +11,9 @@ import {
   Trash2,
   UserRound,
   X,
+  AlertTriangle,
+  CheckCircle2,
+  FolderKanban,
 } from "lucide-react";
 
 const API = "";
@@ -39,11 +42,23 @@ function ProjectCard({ project, onOpen }) {
   );
 }
 
-function ResultBlock({ title, items = [] }) {
+function ResultBlock({ title, items = [], icon: Icon = CheckCircle2, tone = "default" }) {
   return (
-    <div className="result-block">
-      <h3>{title}</h3>
-      {items.length ? <ul>{items.map((item, i) => <li key={`${item}-${i}`}>{item}</li>)}</ul> : <p>None returned.</p>}
+    <section className={`result-block result-block-${tone}`}>
+      <div className="result-title"><Icon size={16} /><h3>{title}</h3><span>{items.length}</span></div>
+      {items.length ? (
+        <ul>{items.map((item, i) => <li key={`${item}-${i}`}>{item}</li>)}</ul>
+      ) : <p className="empty-result">None returned.</p>}
+    </section>
+  );
+}
+
+function JdMetric({ value, label, icon: Icon }) {
+  return (
+    <div className="jd-metric">
+      <span className="jd-metric-icon"><Icon size={16} /></span>
+      <strong>{value}</strong>
+      <span>{label}</span>
     </div>
   );
 }
@@ -236,7 +251,61 @@ export default function App() {
       )}
 
       {tab === "jd" && (
-        <section className="page-section tool-page"><div className="section-heading"><div><span className="section-kicker">RECRUITER TOOL</span><h2>Job Description Analyzer</h2></div></div><p className="tool-intro">Paste a JD to compare its requirements with documented portfolio evidence. The tool does not make a hiring decision.</p><textarea className="jd-box" value={jd} onChange={(e) => setJd(e.target.value)} placeholder="Paste the job description here..." /><button className="primary" onClick={analyzeJD} disabled={loading || jd.length < 20}><Search size={17} /> Analyze evidence</button>{jdResult && <div className="result-grid"><ResultBlock title="Documented skill matches" items={jdResult.matched_documented_skills} /><ResultBlock title="Relevant projects" items={jdResult.relevant_projects} /><ResultBlock title="Requested but not verified" items={jdResult.requested_but_not_verified} /><ResultBlock title="Evidence & notes" items={[...(jdResult.evidence || []), ...(jdResult.notes || [])]} /></div>}</section>
+        <section className="page-section tool-page">
+          <div className="section-heading">
+            <div><span className="section-kicker">RECRUITER TOOL</span><h2>Job Description Analyzer</h2></div>
+          </div>
+          <p className="tool-intro">Paste a JD to compare its requirements with documented portfolio evidence. The analyzer surfaces evidence; it does not make a hiring decision.</p>
+          <div className="jd-input-card">
+            <textarea className="jd-box" value={jd} onChange={(e) => setJd(e.target.value)} placeholder="Paste the job description here..." />
+            <div className="jd-input-footer">
+              <span>{jd.length} characters</span>
+              <button className="primary" onClick={analyzeJD} disabled={loading || jd.length < 20}><Search size={17} /> {loading ? "Analyzing..." : "Analyze evidence"}</button>
+            </div>
+          </div>
+          {jdResult && (
+            <>
+              <div className="jd-metrics">
+                <JdMetric value={jdResult.matched_documented_skills?.length || 0} label="Documented matches" icon={CheckCircle2} />
+                <JdMetric value={jdResult.relevant_projects?.length || 0} label="Relevant projects" icon={FolderKanban} />
+                <JdMetric value={jdResult.requested_but_not_verified?.length || 0} label="Not verified" icon={AlertTriangle} />
+                <JdMetric value={(jdResult.evidence || []).length} label="Evidence items" icon={Search} />
+              </div>
+
+              <div className="jd-results-grid">
+                <ResultBlock title="Matched requirements" items={jdResult.matched_documented_skills} icon={CheckCircle2} tone="match" />
+                <section className="result-block result-block-projects">
+                  <div className="result-title"><FolderKanban size={16} /><h3>Relevant projects</h3><span>{jdResult.relevant_projects?.length || 0}</span></div>
+                  {jdResult.relevant_projects?.length ? (
+                    <div className="jd-project-list">
+                      {jdResult.relevant_projects.map((name) => {
+                        const project = projects.find((item) => item.name === name);
+                        return (
+                          <button className="jd-project-row" key={name} onClick={() => project && setSelectedProject(project)} disabled={!project}>
+                            <span><strong>{name}</strong><small>{project ? "Open documented project evidence" : "Project referenced by analyzer"}</small></span>
+                            <span className="jd-project-arrow">→</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : <p className="empty-result">No relevant projects returned.</p>}
+                </section>
+              </div>
+
+              <ResultBlock title="Requested but not verified" items={jdResult.requested_but_not_verified} icon={AlertTriangle} tone="warning" />
+
+              <section className="evidence-panel">
+                <div className="evidence-panel-head">
+                  <div><span className="section-kicker">TRACEABLE EVIDENCE</span><h3>Evidence & notes</h3></div>
+                  <span>{(jdResult.evidence || []).length + (jdResult.notes || []).length} items</span>
+                </div>
+                <div className="evidence-list">
+                  {[...(jdResult.evidence || []), ...(jdResult.notes || [])].map((item, i) => <div className="evidence-line" key={`${item}-${i}`}><span>•</span><p>{item}</p></div>)}
+                </div>
+              </section>
+            </>
+          )}
+        </section>
       )}
 
       {tab === "interview" && (
