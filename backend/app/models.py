@@ -38,11 +38,23 @@ class ChatMessage(BaseModel):
     content: str
 
 
+class JDAnalysisContext(BaseModel):
+    """Deterministic JD Analyzer result passed to recruiter chat."""
+
+    job_description: str = Field(min_length=20, max_length=15000)
+    matched_documented_skills: list[str] = Field(default_factory=list)
+    relevant_projects: list[str] = Field(default_factory=list)
+    requested_but_not_verified: list[str] = Field(default_factory=list)
+    evidence: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
 class ChatRequest(BaseModel):
-    """Chat request containing the question and recent conversation history."""
+    """Chat request containing the question, history, and optional JD analysis."""
 
     message: str = Field(min_length=1, max_length=4000)
     history: list[ChatMessage] = Field(default_factory=list)
+    jd_context: JDAnalysisContext | None = None
 
 
 class JobMatchRequest(BaseModel):
