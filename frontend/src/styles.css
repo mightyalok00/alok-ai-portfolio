@@ -163,3 +163,16 @@
 .evidence-notes-list .evidence-line{color:#8995a8}
 @media(max-width:800px){.evidence-groups{grid-template-columns:1fr}}
 @media(max-width:650px){.jd-step-heading h3{font-size:15px}.evidence-group-heading{align-items:start}}
+
+/* Explicit recruiter workflow */
+.jd-workflow-label{display:grid;grid-template-columns:28px auto 1fr;align-items:center;gap:8px;margin:18px 2px 8px}
+.jd-workflow-label>span,.jd-discuss-number{display:grid;place-items:center;width:26px;height:26px;border:1px solid #31436f;border-radius:8px;background:#111a2d;color:#9cacff;font-size:9px;font-weight:800}
+.jd-workflow-label>strong{color:#e8edf5;font-size:12px}
+.jd-workflow-label>small{color:#65738a;font-size:9px;line-height:1.4}
+.jd-workflow-label+.result-block{margin-top:0}
+.jd-discuss-step{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:12px;padding:15px 17px;border:1px solid #2a3962;border-radius:15px;background:#0b111c}
+.jd-discuss-step>div{display:flex;align-items:center;gap:10px;min-width:0}
+.jd-discuss-step strong{display:block;color:#e9eef6;font-size:12px}
+.jd-discuss-step small{display:block;color:#68768c;font-size:9px;line-height:1.45;margin-top:3px}
+.jd-discuss-step .primary{flex:0 0 auto}
+@media(max-width:650px){.jd-workflow-label{grid-template-columns:28px 1fr}.jd-workflow-label>small{grid-column:2}.jd-discuss-step{align-items:stretch;flex-direction:column}.jd-discuss-step .primary{width:100%}}
