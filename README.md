@@ -192,13 +192,14 @@ Discuss with AI
 Grounded Recruiter Chat
 ```
 
-When a JD is analyzed, its deterministic result can be loaded into AI Chat as structured context. Follow-up answers must preserve the analyzer's documented-match and not-verified classifications.
+When a JD is analyzed, its deterministic result becomes the **active recruiter session**. That session is persisted in the browser and reused across JD Analyzer, Projects, AI Chat, Recruiter Mode, and Interview Mode. Follow-up answers must preserve the analyzer's documented-match and not-verified classifications.
 
 ## Roadmap
 
 - GitHub repository evidence ingestion
 - richer project metrics backed by source evidence
-- JD-aware recruiter interview sessions
+- Persistent recruiter sessions shared across JD Analyzer, Projects, AI Chat, Recruiter Mode, and Interview Mode
+- JD-aware interview coaching grounded in deterministic analyzer output
 - optional recruiter resume download
 - optional voice interface
 - deployment with a cloud-hosted model when laptop-local Ollama is unavailable
