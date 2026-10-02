@@ -26,6 +26,13 @@ const QUICK = [
   "What is documented about Alok's FastAPI work?",
 ];
 
+const JD_QUICK = [
+  ["Documented requirements", "Which JD requirements are explicitly documented in the analyzer result?"],
+  ["Not verified", "Which JD requirements are explicitly not verified?"],
+  ["Relevant projects", "Which projects are relevant to this JD, and what evidence supports them?"],
+  ["Traceable evidence", "Show the traceable evidence behind the JD analysis."],
+];
+
 
 const SAMPLE_JD = "We are looking for a Python Data Scientist with experience in Python, Pandas, NumPy, Scikit-learn, Machine Learning, Regression, Classification, SQL, data visualization, and Generative AI.\n\nThe candidate should be able to build machine learning models, evaluate models, analyze datasets, create visualizations, and develop production-ready Python applications and APIs.";
 
@@ -346,8 +353,8 @@ export default function App() {
               <span>Use the prompts below to scan the portfolio quickly.</span>
             </div>
 
-            <div className="quick-row">
-              {QUICK.map((question) => (
+            <div className="quick-row" aria-label="Recruiter quick prompts">
+              {(jdContext ? JD_QUICK.map(([, question]) => question) : QUICK).map((question) => (
                 <button type="button" key={question} onClick={() => sendMessage(question)} disabled={loading}>{question}</button>
               ))}
             </div>
@@ -454,7 +461,7 @@ export default function App() {
             <section className="jd-empty-state">
               <div className="jd-empty-icon"><Search size={20} /></div>
               <div>
-                <span className="section-kicker">STEP 2 · EVIDENCE ANALYSIS</span>
+                <span className="section-kicker">STEP 2 · REQUIREMENT MATCH</span>
                 <h3>Turn a job description into a traceable evidence map.</h3>
                 <p>We'll identify documented skill matches, the most relevant projects, explicitly unverified requirements, and supporting evidence.</p>
                 <div className="jd-empty-points">
@@ -534,23 +541,7 @@ export default function App() {
                   </div>
                   <div className="evidence-panel-actions">
                     <span>{(jdResult.evidence || []).length} evidence · {(jdResult.notes || []).length} notes</span>
-                    <button
-                      className="secondary jd-chat-button"
-                      type="button"
-                      onClick={() => {
-                        setJdContext({ job_description: jd, result: jdResult });
-                        setTab("chat");
-                        setMessages((items) => [
-                          ...items,
-                          {
-                            role: "assistant",
-                            content: "JD context loaded. I can now answer follow-up questions using this analysis, the documented portfolio evidence, and the explicitly unverified requirements."
-                          }
-                        ]);
-                      }}
-                    >
-                      <MessageSquare size={15} /> Discuss with AI
-                    </button>
+
                   </div>
                 </div>
                 <div className="evidence-groups">
