@@ -11,6 +11,25 @@ class OllamaProvider:
         self.base_url = base_url.rstrip("/")
         self.model = model
 
+    def health(self) -> str:
+        """Check whether the configured Ollama server is reachable."""
+        try:
+            response = httpx.get(
+                f"{self.base_url}/api/tags",
+                timeout=httpx.Timeout(connect=3.0, read=5.0),
+            )
+            response.raise_for_status()
+            models = {
+                item.get("name")
+                for item in response.json().get("models", [])
+                if item.get("name")
+            }
+            if self.model not in models:
+                return f"reachable; model '{self.model}' not found"
+            return "connected"
+        except (httpx.HTTPError, ValueError):
+            return "unreachable"
+
     def stream(self, system: str, prompt: str) -> Iterator[str]:
         """Stream generated text from a local Ollama model.
 
