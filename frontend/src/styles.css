@@ -176,3 +176,27 @@
 .jd-discuss-step small{display:block;color:#68768c;font-size:9px;line-height:1.45;margin-top:3px}
 .jd-discuss-step .primary{flex:0 0 auto}
 @media(max-width:650px){.jd-workflow-label{grid-template-columns:28px 1fr}.jd-workflow-label>small{grid-column:2}.jd-discuss-step{align-items:stretch;flex-direction:column}.jd-discuss-step .primary{width:100%}}
+
+
+/* Chat overflow and recruiter prompt polish */
+.chat-workspace,.chat-card,.chat-side-panel,.chat-side-card,.messages,.message,.message-body{min-width:0}
+.messages{overflow-x:hidden;overscroll-behavior:contain}
+.message-body{overflow-wrap:anywhere;word-break:break-word}
+.message-body pre{max-width:100%;overflow-x:auto}
+.message-body code{overflow-wrap:anywhere}
+.message-body ul,.message-body ol{max-width:100%;padding-left:20px}
+.quick-row{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;max-width:100%}
+.quick-row button{white-space:normal;text-align:left;max-width:360px;line-height:1.35}
+.prompt-list{min-width:0}
+.prompt-list button{min-width:0;overflow:hidden}
+.prompt-list span{overflow-wrap:anywhere}
+.chat-context-row{min-width:0;display:flex!important;align-items:center;gap:8px;flex-wrap:wrap}
+.chat-context-clear{font-size:9px;padding:0!important}
+.evidence-panel-actions>span{white-space:nowrap}
+.jd-discuss-step{border-color:#344a7b;background:linear-gradient(145deg,#0d1525,#0b111c)}
+.jd-discuss-step .primary{min-width:145px}
+@media(max-width:650px){
+  .quick-row{padding-bottom:10px}
+  .quick-row button{max-width:280px}
+  .evidence-panel-actions>span{white-space:normal}
+}
