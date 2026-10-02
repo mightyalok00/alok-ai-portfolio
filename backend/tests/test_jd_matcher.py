@@ -75,3 +75,31 @@ def test_match_job_api_returns_structured_json():
     assert "Pandas" in payload["matched_documented_skills"]
     assert "relevant_projects" in payload
     assert "requested_but_not_verified" in payload
+
+
+
+def test_question_input_is_detected_as_not_a_jd():
+    """WHY: Recruiter questions should not produce a misleading zero-result analysis."""
+    from app.jd_matcher import looks_like_question
+
+    assert looks_like_question("Which requirements from this JD are not verified in my profile?")
+    assert looks_like_question("What projects demonstrate Python?")
+    assert not looks_like_question(
+        "We are looking for a Python Data Scientist with experience in Pandas, NumPy, and Scikit-learn."
+    )
+
+
+def test_match_job_api_rejects_question_input():
+    """WHY: The API should guide question input to AI Chat instead of returning empty evidence."""
+    from fastapi.testclient import TestClient
+    from app.main import app
+
+    response = TestClient(app).post(
+        "/api/match-job",
+        json={
+            "job_description": "Which requirements from this JD are not verified in my profile?"
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "jd_question_input"
