@@ -9,6 +9,9 @@ class OllamaProvider:
 
     def __init__(self, base_url: str, model: str) -> None:
         self.base_url = base_url.rstrip("/")
+        # WHY: On Windows, localhost may resolve to IPv6 (::1) while Ollama listens on IPv4.
+        if self.base_url.startswith("http://localhost:"):
+            self.base_url = self.base_url.replace("http://localhost:", "http://127.0.0.1:", 1)
         self.model = model
 
     def health(self) -> str:
