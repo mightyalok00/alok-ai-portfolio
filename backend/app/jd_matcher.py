@@ -61,6 +61,22 @@ UNVERIFIED_TERMS = (
 
 VISUALIZATION_SKILLS = ("Matplotlib", "Seaborn", "Plotly")
 
+QUESTION_STARTERS = (
+    "what ", "which ", "how ", "why ", "when ", "where ",
+    "who ", "can ", "could ", "would ", "should ", "is ", "are ",
+    "do ", "does ", "did ", "will ",
+)
+
+
+def looks_like_question(value: str) -> bool:
+    """Detect likely recruiter questions accidentally entered as a JD."""
+    text = value.strip().lower()
+    if not text:
+        return False
+    if text.endswith("?"):
+        return True
+    return text.startswith(QUESTION_STARTERS)
+
 
 def normalize_text(value: str) -> str:
     """Normalize text for deterministic, case-insensitive phrase matching."""
