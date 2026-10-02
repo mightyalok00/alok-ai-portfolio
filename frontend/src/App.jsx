@@ -173,6 +173,13 @@ export default function App() {
   const skills = candidate?.skills || [];
   const featured = projects.slice(0, 3);
 
+  function openSkillEvidence(skill) {
+    const evidence = projects.filter((p) =>
+      (p.technologies || []).some((t) => t.toLowerCase() === skill.toLowerCase())
+    );
+    setSelectedSkill({ name: skill, projects: evidence });
+  }
+
   return (
     <main className="app-shell">
       <nav className="nav">
@@ -239,7 +246,7 @@ export default function App() {
           <div className="evidence-section"><div className="section-heading"><div><span className="section-kicker">SKILL EVIDENCE</span><h2>Skills connected to portfolio work</h2></div></div><div className="skill-evidence-grid">{skills.map((skill) => {
             const evidence = projects.filter((p) => (p.technologies || []).some((t) => t.toLowerCase() === skill.toLowerCase()));
             return (
-              <button className="skill-evidence skill-evidence-button" key={skill} onClick={() => setSelectedSkill({ name: skill, projects: evidence })}>
+              <button className="skill-evidence skill-evidence-button" key={skill} type="button" onClick={() => openSkillEvidence(skill)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openSkillEvidence(skill); } }}>
                 <strong>{skill}</strong>
                 <span>{evidence.length ? `${evidence.length} project${evidence.length === 1 ? "" : "s"}` : "Documented skill"}</span>
                 {evidence.length > 0 && <small>{evidence.slice(0, 2).map((p) => p.name).join(" • ")}</small>}
@@ -352,7 +359,7 @@ export default function App() {
           {selectedSkill.projects.length ? (
             <div className="skill-project-list">
               {selectedSkill.projects.map((project) => (
-                <button className="skill-project-row" key={project.name} onClick={() => { setSelectedSkill(null); setSelectedProject(project); }}>
+                <button type="button" className="skill-project-row" key={project.name} onClick={() => { setSelectedSkill(null); setSelectedProject(project); }}>
                   <span>
                     <strong>{project.name}</strong>
                     <small>{(project.technologies || []).filter((tech) => tech.toLowerCase() === selectedSkill.name.toLowerCase()).join(" • ") || "Documented project evidence"}</small>
