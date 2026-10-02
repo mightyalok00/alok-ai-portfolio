@@ -485,7 +485,7 @@ export default function App() {
               </section>
 
               <div className="jd-results-grid">
-                <ResultBlock title="Matched requirements" items={jdResult.matched_documented_skills} icon={CheckCircle2} tone="match" compact />
+                <ResultBlock title="Documented requirements" items={jdResult.matched_documented_skills} icon={CheckCircle2} tone="match" compact />
                 <section className="result-block result-block-projects">
                   <div className="result-title"><FolderKanban size={16} /><h3>Relevant projects</h3><span>{jdResult.relevant_projects?.length || 0}</span></div>
                   {jdResult.relevant_projects?.length ? (
@@ -520,7 +520,7 @@ export default function App() {
                 </section>
               </div>
 
-              <ResultBlock title="Requested but not verified" items={jdResult.requested_but_not_verified} icon={AlertTriangle} tone="warning" />
+              <ResultBlock title="Not verified requirements" items={jdResult.requested_but_not_verified} icon={AlertTriangle} tone="warning" />
 
               <section className="evidence-panel">
                 <div className="evidence-panel-head">
