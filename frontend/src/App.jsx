@@ -42,9 +42,9 @@ function ProjectCard({ project, onOpen }) {
   );
 }
 
-function ResultBlock({ title, items = [], icon: Icon = CheckCircle2, tone = "default" }) {
+function ResultBlock({ title, items = [], icon: Icon = CheckCircle2, tone = "default", compact = false }) {
   return (
-    <section className={`result-block result-block-${tone}`}>
+    <section className={`result-block result-block-${tone}${compact ? " result-block-compact" : ""}`}>
       <div className="result-title"><Icon size={16} /><h3>{title}</h3><span>{items.length}</span></div>
       {items.length ? (
         <ul>{items.map((item, i) => <li key={`${item}-${i}`}>{item}</li>)}</ul>
@@ -273,16 +273,32 @@ export default function App() {
               </div>
 
               <div className="jd-results-grid">
-                <ResultBlock title="Matched requirements" items={jdResult.matched_documented_skills} icon={CheckCircle2} tone="match" />
+                <ResultBlock title="Matched requirements" items={jdResult.matched_documented_skills} icon={CheckCircle2} tone="match" compact />
                 <section className="result-block result-block-projects">
                   <div className="result-title"><FolderKanban size={16} /><h3>Relevant projects</h3><span>{jdResult.relevant_projects?.length || 0}</span></div>
                   {jdResult.relevant_projects?.length ? (
                     <div className="jd-project-list">
                       {jdResult.relevant_projects.map((name) => {
                         const project = projects.find((item) => item.name === name);
+                        const matchedSkills = project
+                          ? (project.technologies || []).filter((tech) =>
+                              (jdResult.matched_documented_skills || []).some(
+                                (skill) => skill.toLowerCase() === tech.toLowerCase()
+                              )
+                            ).slice(0, 5)
+                          : [];
                         return (
                           <button className="jd-project-row" key={name} onClick={() => project && setSelectedProject(project)} disabled={!project}>
-                            <span><strong>{name}</strong><small>{project ? "Open documented project evidence" : "Project referenced by analyzer"}</small></span>
+                            <span className="jd-project-copy">
+                              <strong>{name}</strong>
+                              {matchedSkills.length ? (
+                                <span className="jd-project-tags">
+                                  {matchedSkills.map((skill) => <em key={skill}>{skill}</em>)}
+                                </span>
+                              ) : (
+                                <small>{project ? "Open documented project evidence" : "Project referenced by analyzer"}</small>
+                              )}
+                            </span>
                             <span className="jd-project-arrow">→</span>
                           </button>
                         );
