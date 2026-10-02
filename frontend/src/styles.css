@@ -200,3 +200,14 @@
   .quick-row button{max-width:280px}
   .evidence-panel-actions>span{white-space:normal}
 }
+
+/* Persistent recruiter session */
+.session-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:12px 0;padding:14px 16px;border:1px solid #2d3e67;border-radius:15px;background:linear-gradient(145deg,#0d1525,#0a1018)}
+.session-banner>div:first-child{display:flex;flex-direction:column;gap:3px;min-width:0}
+.session-banner strong{display:block;color:#e9eef6;font-size:12px}
+.session-banner small{display:block;color:#6f7d92;font-size:9px;line-height:1.45}
+.session-banner>div:last-child{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.session-banner .secondary{padding:7px 10px;font-size:10px}
+.compact-session{margin:0 0 12px}
+.compact-session strong{font-size:11px}
+@media(max-width:650px){.session-banner{align-items:stretch;flex-direction:column}.session-banner>div:last-child{justify-content:flex-start;flex-wrap:wrap}.compact-session{margin-bottom:12px}}
