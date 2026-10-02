@@ -17,6 +17,7 @@ class OllamaProvider:
             response = httpx.get(
                 f"{self.base_url}/api/tags",
                 timeout=httpx.Timeout(connect=3.0, read=5.0),
+                trust_env=False,
             )
             response.raise_for_status()
             models = {
@@ -51,6 +52,7 @@ class OllamaProvider:
                 f"{self.base_url}/api/generate",
                 json=payload,
                 timeout=timeout,
+                trust_env=False,
             ) as response:
                 response.raise_for_status()
                 for line in response.iter_lines():
