@@ -17,7 +17,7 @@ import {
   ClipboardPaste,
 } from "lucide-react";
 
-const API = "";
+const API = import.meta.env.VITE_API_URL || "";
 
 const QUICK = [
   "Give me a concise recruiter summary of Alok.",
