@@ -467,12 +467,22 @@ export default function App() {
           )}
           {jdResult && (
             <>
-              <div className="jd-metrics">
-                <JdMetric value={jdResult.matched_documented_skills?.length || 0} label="Documented matches" icon={CheckCircle2} />
-                <JdMetric value={jdResult.relevant_projects?.length || 0} label="Relevant projects" icon={FolderKanban} />
-                <JdMetric value={jdResult.requested_but_not_verified?.length || 0} label="Not verified" icon={AlertTriangle} />
-                <JdMetric value={(jdResult.evidence || []).length} label="Evidence items" icon={Search} />
-              </div>
+              <section className="jd-match-section">
+                <div className="jd-step-heading">
+                  <div>
+                    <span className="section-kicker">STEP 2 · REQUIREMENT MATCH</span>
+                    <h3>What the JD asks for, compared with documented evidence</h3>
+                    <p>These results are deterministic matches against the candidate profile and project records. They are not a hiring score.</p>
+                  </div>
+                </div>
+
+                <div className="jd-metrics">
+                  <JdMetric value={jdResult.matched_documented_skills?.length || 0} label="Documented matches" icon={CheckCircle2} />
+                  <JdMetric value={jdResult.relevant_projects?.length || 0} label="Projects with evidence" icon={FolderKanban} />
+                  <JdMetric value={jdResult.requested_but_not_verified?.length || 0} label="Not verified" icon={AlertTriangle} />
+                  <JdMetric value={(jdResult.evidence || []).length} label="Traceable evidence" icon={Search} />
+                </div>
+              </section>
 
               <div className="jd-results-grid">
                 <ResultBlock title="Matched requirements" items={jdResult.matched_documented_skills} icon={CheckCircle2} tone="match" compact />
@@ -514,9 +524,13 @@ export default function App() {
 
               <section className="evidence-panel">
                 <div className="evidence-panel-head">
-                  <div><span className="section-kicker">STEP 3 · TRACEABLE EVIDENCE</span><h3>Evidence & notes</h3></div>
+                  <div>
+                    <span className="section-kicker">STEP 3 · TRACEABLE EVIDENCE</span>
+                    <h3>Why each match was made</h3>
+                    <p>Review the underlying portfolio evidence before moving to an AI follow-up.</p>
+                  </div>
                   <div className="evidence-panel-actions">
-                    <span>{(jdResult.evidence || []).length + (jdResult.notes || []).length} items</span>
+                    <span>{(jdResult.evidence || []).length} evidence · {(jdResult.notes || []).length} notes</span>
                     <button
                       className="secondary jd-chat-button"
                       type="button"
@@ -536,8 +550,27 @@ export default function App() {
                     </button>
                   </div>
                 </div>
-                <div className="evidence-list">
-                  {[...(jdResult.evidence || []), ...(jdResult.notes || [])].map((item, i) => <div className="evidence-line" key={`${item}-${i}`}><span>•</span><p>{item}</p></div>)}
+                <div className="evidence-groups">
+                  <section className="evidence-group">
+                    <div className="evidence-group-heading">
+                      <CheckCircle2 size={15} />
+                      <div><strong>Documented evidence</strong><span>Source-backed matches from the portfolio</span></div>
+                      <b>{(jdResult.evidence || []).length}</b>
+                    </div>
+                    <div className="evidence-list">
+                      {(jdResult.evidence || []).map((item, i) => <div className="evidence-line" key={`${item}-${i}`}><span>•</span><p>{item}</p></div>)}
+                    </div>
+                  </section>
+                  <section className="evidence-group evidence-group-notes">
+                    <div className="evidence-group-heading">
+                      <AlertTriangle size={15} />
+                      <div><strong>Analyzer notes</strong><span>Important context and verification limits</span></div>
+                      <b>{(jdResult.notes || []).length}</b>
+                    </div>
+                    <div className="evidence-list evidence-notes-list">
+                      {(jdResult.notes || []).map((item, i) => <div className="evidence-line" key={`${item}-${i}`}><span>•</span><p>{item}</p></div>)}
+                    </div>
+                  </section>
                 </div>
               </section>
             </>
