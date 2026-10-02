@@ -76,6 +76,7 @@ export default function App() {
   const [interview, setInterview] = useState(null);
   const [interviewAnswer, setInterviewAnswer] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedSkill, setSelectedSkill] = useState(null);
   const bottom = useRef(null);
 
   useEffect(() => {
@@ -235,7 +236,17 @@ export default function App() {
             </div>
           </div>
           <div className="evidence-strip"><div><strong>{projectCount}</strong><span>documented projects</span></div><div><strong>{skillCount}</strong><span>documented skills</span></div><div><strong>{candidate?.education?.length || 0}</strong><span>verified education records</span></div><div><strong>{candidate?.experience?.length || 0}</strong><span>documented experience records</span></div></div>
-          <div className="evidence-section"><div className="section-heading"><div><span className="section-kicker">SKILL EVIDENCE</span><h2>Skills connected to portfolio work</h2></div></div><div className="skill-evidence-grid">{skills.map((skill) => { const evidence = projects.filter((p) => (p.technologies || []).some((t) => t.toLowerCase() === skill.toLowerCase())).map((p) => p.name); return <article className="skill-evidence" key={skill}><strong>{skill}</strong><span>{evidence.length ? `${evidence.length} project${evidence.length === 1 ? "" : "s"}` : "Documented skill"}</span>{evidence.length > 0 && <small>{evidence.slice(0, 2).join(" • ")}</small>}</article>; })}</div></div>
+          <div className="evidence-section"><div className="section-heading"><div><span className="section-kicker">SKILL EVIDENCE</span><h2>Skills connected to portfolio work</h2></div></div><div className="skill-evidence-grid">{skills.map((skill) => {
+            const evidence = projects.filter((p) => (p.technologies || []).some((t) => t.toLowerCase() === skill.toLowerCase()));
+            return (
+              <button className="skill-evidence skill-evidence-button" key={skill} onClick={() => setSelectedSkill({ name: skill, projects: evidence })}>
+                <strong>{skill}</strong>
+                <span>{evidence.length ? `${evidence.length} project${evidence.length === 1 ? "" : "s"}` : "Documented skill"}</span>
+                {evidence.length > 0 && <small>{evidence.slice(0, 2).map((p) => p.name).join(" • ")}</small>}
+                <em>{evidence.length ? "View supporting evidence →" : "View documentation →"}</em>
+              </button>
+            );
+          })}</div></div>
         </section>
       )}
 
@@ -327,6 +338,34 @@ export default function App() {
       {tab === "interview" && (
         <section className="page-section tool-page"><div className="section-heading"><div><span className="section-kicker">INTERVIEW MODE</span><h2>Practice from your portfolio</h2></div></div><div className="focus-row">{["machine learning", "Python", "SQL", "GenAI", "FastAPI"].map((item) => <button key={item} className={focus === item ? "selected" : ""} onClick={() => setFocus(item)}>{item}</button>)}</div><button className="primary" onClick={() => startInterview()} disabled={loading}><UserRound size={17} /> Generate question</button>{interview && <div className="interview-card"><span className="section-kicker">QUESTION</span><h3>{interview.question}</h3><p><strong>Why it matters:</strong> {interview.why_it_matters}</p><textarea className="answer-box" value={interviewAnswer} onChange={(e) => setInterviewAnswer(e.target.value)} placeholder="Write your answer here..." /><button className="secondary" onClick={() => startInterview(interviewAnswer)} disabled={loading || !interviewAnswer.trim()}>Evaluate & generate follow-up</button>{interview.evaluation && <div className="evaluation"><strong>Coaching:</strong><p>{interview.evaluation}</p><strong>Follow-up:</strong><p>{interview.follow_up}</p></div>}</div>}</section>
       )}
+
+      {selectedSkill && <div className="modal-backdrop" onClick={() => setSelectedSkill(null)}>
+        <article className="project-modal skill-modal" onClick={(event) => event.stopPropagation()}>
+          <button className="modal-close" onClick={() => setSelectedSkill(null)}><X size={18} /></button>
+          <span className="section-kicker">SKILL EVIDENCE</span>
+          <h2>{selectedSkill.name}</h2>
+          <p className="modal-description">
+            {selectedSkill.projects.length
+              ? `Documented across ${selectedSkill.projects.length} portfolio project${selectedSkill.projects.length === 1 ? "" : "s"}.`
+              : "The skill is documented in the candidate profile, but no project-level technology evidence is currently recorded."}
+          </p>
+          {selectedSkill.projects.length ? (
+            <div className="skill-project-list">
+              {selectedSkill.projects.map((project) => (
+                <button className="skill-project-row" key={project.name} onClick={() => { setSelectedSkill(null); setSelectedProject(project); }}>
+                  <span>
+                    <strong>{project.name}</strong>
+                    <small>{(project.technologies || []).filter((tech) => tech.toLowerCase() === selectedSkill.name.toLowerCase()).join(" • ") || "Documented project evidence"}</small>
+                  </span>
+                  <span>View project →</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="evidence-note"><strong>Documentation note</strong><p>No project-level evidence is currently recorded for this skill.</p></div>
+          )}
+        </article>
+      </div>}
 
       {selectedProject && <div className="modal-backdrop" onClick={() => setSelectedProject(null)}><article className="project-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setSelectedProject(null)}><X size={18} /></button><span className="section-kicker">PROJECT DETAIL</span><h2>{selectedProject.name}</h2><p className="modal-description">{selectedProject.description}</p><div className="chips">{(selectedProject.technologies || []).map((tech) => <span key={tech}>{tech}</span>)}</div><div className="evidence-note"><strong>Documented evidence</strong><ul>{(selectedProject.evidence_notes || []).map((note) => <li key={note}>{note}</li>)}</ul></div><div className="modal-actions">{selectedProject.repository && <a className="primary" href={selectedProject.repository} target="_blank" rel="noreferrer"><Github size={17} /> View GitHub</a>}{selectedProject.demo && <a className="secondary" href={selectedProject.demo} target="_blank" rel="noreferrer"><ExternalLink size={17} /> Live demo</a>}<button className="secondary" onClick={() => { setSelectedProject(null); setTab("chat"); setTimeout(() => sendMessage(`Explain the documented evidence for the ${selectedProject.name} project.`), 0); }}><MessageSquare size={17} /> Ask AI</button></div></article></div>}
 
