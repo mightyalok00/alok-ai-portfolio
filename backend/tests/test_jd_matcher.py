@@ -52,3 +52,26 @@ def test_jd_matcher_never_calls_an_llm():
         "SQL",
     ]
     assert result["relevant_projects"]
+
+
+def test_match_job_api_returns_structured_json():
+    """WHY: The frontend must receive valid structured JSON without Ollama."""
+    from fastapi.testclient import TestClient
+    from app.main import app
+
+    response = TestClient(app).post(
+        "/api/match-job",
+        json={
+            "job_description": (
+                "Python, Pandas, NumPy, Scikit-learn, SQL, "
+                "and Generative AI."
+            )
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "Python" in payload["matched_documented_skills"]
+    assert "Pandas" in payload["matched_documented_skills"]
+    assert "relevant_projects" in payload
+    assert "requested_but_not_verified" in payload
