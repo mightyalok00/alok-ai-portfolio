@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """WHY: Keep local Ollama/model settings in one validated configuration object."""
 
-    ollama_base_url: str = "http://localhost:11434"
+    ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_chat_model: str = "llama3.2:latest"
     ollama_code_model: str = "qwen2.5-coder:7b"
     ollama_reasoning_model: str = "deepseek-r1:7b"
