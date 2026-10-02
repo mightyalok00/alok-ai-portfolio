@@ -1,4 +1,4 @@
-from app.prompts import build_jd_context
+from app.prompts import SYSTEM_PROMPT, build_jd_context
 
 
 def test_jd_context_treats_analyzer_as_authoritative():
@@ -16,8 +16,8 @@ def test_jd_context_treats_analyzer_as_authoritative():
     assert "Python, Machine Learning" in context
     assert "RELEVANT PROJECTS:" in context
     assert "Gradient Descent Mastery" in context
-    assert "NONE — the analyzer flagged no requirements as not verified." in context
-    assert "requested_but_not_verified is the ONLY list" in context
+    assert "NONE — no requirements were explicitly flagged as not verified." in context
+    assert "it does NOT mean \"all requirements are verified\"" in context
 
 
 def test_jd_context_only_allows_explicit_unverified_items():
@@ -32,4 +32,11 @@ def test_jd_context_only_allows_explicit_unverified_items():
     })
 
     assert "NOT VERIFIED:\nTensorFlow" in context
-    assert "Do not infer, speculate, or create additional verification gaps" in context
+    assert "Do not add, remove, or reclassify verification status." in context
+
+
+def test_system_prompt_blocks_blanket_verification_claims():
+    """WHY: An empty analyzer gap list must not become a blanket verification claim."""
+    assert 'Never say "all requirements are verified"' in SYSTEM_PROMPT
+    assert "A documented skill is not automatically professional/employment experience." in SYSTEM_PROMPT
+    assert "do not classify it yourself" in SYSTEM_PROMPT
