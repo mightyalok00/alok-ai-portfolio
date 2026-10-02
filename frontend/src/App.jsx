@@ -86,7 +86,8 @@ export default function App() {
   const [interviewAnswer, setInterviewAnswer] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedSkill, setSelectedSkill] = useState(null);
-  const [apiHealth, setApiHealth] = useState(null);\n  const [jdContext, setJdContext] = useState(null);
+  const [apiHealth, setApiHealth] = useState(null);
+  const [jdContext, setJdContext] = useState(null);
   const bottom = useRef(null);
 
   useEffect(() => {
