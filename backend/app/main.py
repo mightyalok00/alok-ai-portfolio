@@ -65,7 +65,7 @@ def chat(request: ChatRequest) -> StreamingResponse:
 
     def event_stream() -> Iterator[str]:
         try:
-            for chunk in service.stream_chat(request.message, history):
+            for chunk in service.stream_chat(\n                request.message,\n                history,\n                request.jd_context.model_dump() if request.jd_context else None,\n            ):
                 yield json.dumps({"token": chunk}, ensure_ascii=False) + "\n"
         except Exception as exc:
             yield json.dumps(
