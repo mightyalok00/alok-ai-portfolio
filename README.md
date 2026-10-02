@@ -137,7 +137,6 @@ alok-ai-portfolio/
 │   ├── public/
 │   └── src/
 ├── docs/
-├── notebooks/
 ├── README.md
 └── .gitignore
 ```
@@ -156,7 +155,7 @@ The JD Analyzer is intentionally **evidence-first and deterministic**:
 This separation keeps the recruiter workflow grounded in `backend/data/candidate.json` and prevents local model output from inventing qualifications.
 ## Verification
 
-The GitHub Actions workflow validates the backend test suite and frontend production build on pushes and pull requests to `main`.
+The GitHub Actions workflow validates the backend test suite and frontend production build on pushes and pull requests to `main`. Runtime validation is covered by the automated test suite rather than a checked-in local validation notebook.
 
 Backend tests:
 
