@@ -61,13 +61,25 @@ RECRUITER QUESTION:
 
         return build_job_match(self.candidate, job_description)
 
-    def interview(self, focus: str, previous_answer: str, history: list[dict]) -> str:
-        """Generate an evidence-grounded technical interview coaching turn."""
+    def interview(
+        self,
+        focus: str,
+        previous_answer: str,
+        history: list[dict],
+        jd_context: dict | None = None,
+    ) -> str:
+        """Generate an evidence-grounded interview turn with optional JD context."""
         retrieved = retrieve(f"{focus} {previous_answer}", self.documents, top_k=5)
+        jd_contract = build_jd_context(jd_context)
         prompt = f"""
 Act as a portfolio interview coach.
 
 Create a realistic technical interview turn based only on documented portfolio evidence.
+When JD ANALYSIS CONTEXT is supplied, make the question relevant to the active JD's
+documented requirements or explicitly unverified requirements without inventing
+qualifications. The deterministic analyzer remains authoritative for verification.
+
+{jd_contract}
 
 Return ONLY valid JSON:
 {{
