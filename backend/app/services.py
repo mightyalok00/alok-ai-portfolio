@@ -42,39 +42,17 @@ RECRUITER QUESTION:
 """
         yield from self.router.provider_for(message).stream(SYSTEM_PROMPT, prompt)
 
-    def match_job(self, job_description: str) -> str:
-        """Return structured JD analysis without a hiring verdict."""
-        retrieved = retrieve(job_description, self.documents, top_k=8)
-        prompt = f"""
-Analyze this job description against documented portfolio evidence.
+    def match_job(self, job_description: str) -> dict:
+        """Match a JD against the verified portfolio source of truth.
 
-Return ONLY valid JSON:
-{{
-  "matched_documented_skills": [],
-  "relevant_projects": [],
-  "evidence": [],
-  "requested_but_not_verified": [],
-  "notes": []
-}}
+        The JD analyzer is deliberately deterministic. Ollama is not used to
+        decide whether a skill, education record, or employment history exists.
+        This prevents model-generated JSON/reasoning from corrupting the API
+        response or inventing candidate qualifications.
+        """
+        from app.jd_matcher import build_job_match
 
-Rules:
-- Do not assign a hiring score.
-- Do not recommend hiring or rejection.
-- Do not claim a missing skill is absent; call it "not verified".
-- Every evidence item must be supported by the supplied candidate/project data.
-
-CANDIDATE:
-{self._candidate_json()}
-
-RETRIEVED EVIDENCE:
-{"\n\n".join(retrieved) or "No matching evidence was retrieved."}
-
-JOB DESCRIPTION:
-{job_description}
-"""
-        return self.router.provider_for(
-            "job description requirements analysis compare match"
-        ).generate(SYSTEM_PROMPT, prompt)
+        return build_job_match(self.candidate, job_description)
 
     def interview(self, focus: str, previous_answer: str, history: list[dict]) -> str:
         """Generate an evidence-grounded technical interview coaching turn."""
