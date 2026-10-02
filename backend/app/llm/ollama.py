@@ -19,7 +19,7 @@ class OllamaProvider:
         try:
             response = httpx.get(
                 f"{self.base_url}/api/tags",
-                timeout=httpx.Timeout(connect=3.0, read=5.0),
+                timeout=httpx.Timeout(5.0, connect=3.0),
                 trust_env=False,
             )
             response.raise_for_status()
