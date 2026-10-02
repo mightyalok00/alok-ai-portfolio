@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.models import InterviewRequest
 
 
 client = TestClient(app)
@@ -20,3 +21,20 @@ def test_health_reports_evidence_counts():
     assert payload["status"] == "ok"
     assert payload["projects"] > 0
     assert payload["documents"] >= 0
+
+
+def test_interview_request_accepts_active_jd_context():
+    """WHY: Interview Mode must be able to consume the same deterministic JD session."""
+    request = InterviewRequest(
+        focus="Python",
+        jd_context={
+            "job_description": "Python Data Scientist with Pandas and FastAPI experience.",
+            "matched_documented_skills": ["Python", "Pandas", "FastAPI"],
+            "relevant_projects": ["Example Project"],
+            "requested_but_not_verified": [],
+            "evidence": ["Python — documented in 1 project(s): Example Project"],
+            "notes": ["Matches are based only on documented candidate/project data."],
+        },
+    )
+    assert request.jd_context is not None
+    assert request.jd_context.matched_documented_skills == ["Python", "Pandas", "FastAPI"]
