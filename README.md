@@ -257,6 +257,16 @@ npm run dev
 
 Open the Vite development URL displayed in the terminal.
 
+During local development, Vite proxies `/api` requests to `http://127.0.0.1:8000`, so the React frontend and FastAPI backend work together without hard-coding a development API URL into the UI.
+
+For a deployed frontend, create `frontend/.env` from `frontend/.env.example` and set:
+
+```text
+VITE_API_URL=https://your-api-domain.example.com
+```
+
+The backend also allows the local Vite origins `localhost:5173` and `127.0.0.1:5173` for development.
+
 ---
 
 ## 🔌 API Surface
