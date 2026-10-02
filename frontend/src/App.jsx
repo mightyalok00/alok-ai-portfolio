@@ -86,7 +86,7 @@ export default function App() {
   const [interviewAnswer, setInterviewAnswer] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedSkill, setSelectedSkill] = useState(null);
-  const [apiHealth, setApiHealth] = useState(null);
+  const [apiHealth, setApiHealth] = useState(null);\n  const [jdContext, setJdContext] = useState(null);
   const bottom = useRef(null);
 
   useEffect(() => {
@@ -114,7 +114,7 @@ export default function App() {
       const response = await fetch(`${API}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history }),
+        body: JSON.stringify({ message: groundedMessage, history }),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const reader = response.body.getReader();
@@ -281,6 +281,7 @@ export default function App() {
               <div>
                 <strong>Recruiter Assistant</strong>
                 <span>Evidence-grounded • Local Ollama • No hiring decision</span>
+                {jdContext && <small className="chat-context-badge">JD context active • {jdContext.result.relevant_projects?.length || 0} relevant projects</small>}
               </div>
               <button className="icon-button" type="button" onClick={clearChat} title="Clear conversation"><Trash2 size={17} /></button>
             </div>
@@ -415,7 +416,26 @@ export default function App() {
               <section className="evidence-panel">
                 <div className="evidence-panel-head">
                   <div><span className="section-kicker">TRACEABLE EVIDENCE</span><h3>Evidence & notes</h3></div>
-                  <span>{(jdResult.evidence || []).length + (jdResult.notes || []).length} items</span>
+                  <div className="evidence-panel-actions">
+                    <span>{(jdResult.evidence || []).length + (jdResult.notes || []).length} items</span>
+                    <button
+                      className="secondary jd-chat-button"
+                      type="button"
+                      onClick={() => {
+                        setJdContext({ job_description: jd, result: jdResult });
+                        setTab("chat");
+                        setMessages((items) => [
+                          ...items,
+                          {
+                            role: "assistant",
+                            content: "JD context loaded. I can now answer follow-up questions using this analysis, the documented portfolio evidence, and the explicitly unverified requirements."
+                          }
+                        ]);
+                      }}
+                    >
+                      <MessageSquare size={15} /> Discuss with AI
+                    </button>
+                  </div>
                 </div>
                 <div className="evidence-list">
                   {[...(jdResult.evidence || []), ...(jdResult.notes || [])].map((item, i) => <div className="evidence-line" key={`${item}-${i}`}><span>•</span><p>{item}</p></div>)}
