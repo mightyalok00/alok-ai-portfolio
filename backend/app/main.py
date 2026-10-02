@@ -63,8 +63,14 @@ def chat(request: ChatRequest) -> StreamingResponse:
     history = [message.model_dump() for message in request.history]
 
     def event_stream() -> Iterator[str]:
-        for chunk in service.stream_chat(request.message, history):
-            yield json.dumps({"token": chunk}, ensure_ascii=False) + "\n"
+        try:
+            for chunk in service.stream_chat(request.message, history):
+                yield json.dumps({"token": chunk}, ensure_ascii=False) + "\n"
+        except Exception as exc:
+            yield json.dumps(
+                {"error": str(exc), "token": ""},
+                ensure_ascii=False,
+            ) + "\n"
 
     return StreamingResponse(
         event_stream(),
