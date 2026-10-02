@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   FolderKanban,
+  ClipboardPaste,
 } from "lucide-react";
 
 const API = "";
@@ -24,6 +25,24 @@ const QUICK = [
   "What documented evidence supports Alok's machine learning skills?",
   "What is documented about Alok's FastAPI work?",
 ];
+
+
+const SAMPLE_JD = "We are looking for a Python Data Scientist with experience in Python, Pandas, NumPy, Scikit-learn, Machine Learning, Regression, Classification, SQL, data visualization, and Generative AI.\n\nThe candidate should be able to build machine learning models, evaluate models, analyze datasets, create visualizations, and develop production-ready Python applications and APIs.";
+
+const QUESTION_STARTERS = [
+  "what ", "which ", "how ", "why ", "when ", "where ", "who ",
+  "can ", "could ", "would ", "should ", "is ", "are ", "do ", "does ", "did ", "will ",
+];
+
+function classifyJdInput(value) {
+  const text = value.trim().toLowerCase();
+  if (!text) return { kind: "empty", message: "Paste the job description to begin." };
+  if (text.length < 20) return { kind: "short", message: "Add more of the job description so the analyzer has enough context." };
+  if (text.endsWith("?") || QUESTION_STARTERS.some((starter) => text.startsWith(starter))) {
+    return { kind: "question", message: "This looks like a question, not a job description. Paste the actual JD here, or use AI Chat for questions about an existing analysis." };
+  }
+  return { kind: "ready", message: "Ready to analyze the JD against documented portfolio evidence." };
+}
 
 const RECRUITER_PROMPTS = [
   ["Candidate snapshot", "Give me a concise recruiter summary of Alok using only documented portfolio evidence."],
@@ -88,6 +107,7 @@ export default function App() {
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [apiHealth, setApiHealth] = useState(null);
   const [jdContext, setJdContext] = useState(null);
+  const [jdError, setJdError] = useState("");
   const bottom = useRef(null);
 
   useEffect(() => {
@@ -160,8 +180,24 @@ export default function App() {
     } finally { setLoading(false); }
   }
 
+  function handleJdChange(value) {
+    setJd(value);
+    setJdError("");
+    setJdResult(null);
+    setJdContext(null);
+  }
+
+  function useSampleJd() {
+    handleJdChange(SAMPLE_JD);
+  }
+
   async function analyzeJD() {
-    if (jd.trim().length < 20) return;
+    const validation = classifyJdInput(jd);
+    if (validation.kind !== "ready") {
+      setJdError(validation.message);
+      return;
+    }
+    setJdError("");
     setLoading(true);
     try {
       const response = await fetch(`${API}/api/match-job`, {
@@ -169,12 +205,16 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ job_description: jd }),
       });
-      setJdResult(await response.json());
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.detail?.message || payload.detail || `HTTP ${response.status}`);
+      }
+      setJdResult(payload);
     } catch (error) {
-      setJdResult({ notes: [`Could not analyze JD: ${error.message}`] });
+      setJdResult(null);
+      setJdError(error.message);
     } finally { setLoading(false); }
   }
-
   async function startInterview(answer = "") {
     setLoading(true);
     try {
@@ -198,6 +238,7 @@ export default function App() {
   const skillCount = candidate?.skills?.length || 0;
   const skills = candidate?.skills || [];
   const featured = projects.slice(0, 3);
+  const jdInputState = classifyJdInput(jd);
 
   function openSkillEvidence(skill) {
     const evidence = projects.filter((p) =>
@@ -370,13 +411,60 @@ export default function App() {
             <div><span className="section-kicker">RECRUITER TOOL</span><h2>Job Description Analyzer</h2></div>
           </div>
           <p className="tool-intro">Paste a JD to compare its requirements with documented portfolio evidence. The analyzer surfaces evidence; it does not make a hiring decision.</p>
-          <div className="jd-input-card">
-            <textarea className="jd-box" value={jd} onChange={(e) => setJd(e.target.value)} placeholder="Paste the job description here..." />
-            <div className="jd-input-footer">
-              <span>{jd.length} characters</span>
-              <button className="primary" onClick={analyzeJD} disabled={loading || jd.length < 20}><Search size={17} /> {loading ? "Analyzing..." : "Analyze evidence"}</button>
+          <div className={`jd-input-card${jdError ? " jd-input-card-error" : ""}`}>
+            <div className="jd-input-header">
+              <div>
+                <span className="section-kicker">STEP 1 · JOB DESCRIPTION</span>
+                <strong>Paste the role requirements exactly as provided</strong>
+              </div>
+              <button className="text-button jd-example-button" type="button" onClick={useSampleJd}>
+                <ClipboardPaste size={14} /> Use example JD
+              </button>
             </div>
+            <textarea
+              className="jd-box"
+              value={jd}
+              onChange={(e) => handleJdChange(e.target.value)}
+              placeholder="Paste the complete job description here — responsibilities, required skills, qualifications, and preferred technologies..."
+              aria-label="Job description"
+              aria-describedby="jd-input-help"
+            />
+            <div className="jd-input-footer">
+              <div className="jd-input-meta">
+                <span>{jd.length.toLocaleString()} characters</span>
+                <span className={jdInputState.kind === "ready" ? "jd-ready" : ""}>{jdInputState.message}</span>
+              </div>
+              <button className="primary" onClick={analyzeJD} disabled={loading || jdInputState.kind !== "ready"}>
+                <Search size={17} /> {loading ? "Analyzing..." : "Analyze evidence"}
+              </button>
+            </div>
+            <p id="jd-input-help" className="jd-input-help">The analyzer compares this text with documented portfolio evidence. It does not make a hiring decision.</p>
           </div>
+          {jdError && (
+            <div className="jd-validation-error" role="alert">
+              <AlertTriangle size={17} />
+              <div>
+                <strong>Let's analyze the right input</strong>
+                <p>{jdError}</p>
+                {jdInputState.kind === "question" && <button className="secondary jd-validation-action" type="button" onClick={() => setTab("chat")}><MessageSquare size={14} /> Ask this in AI Chat</button>}
+              </div>
+            </div>
+          )}
+          {!jdResult && !jdError && (
+            <section className="jd-empty-state">
+              <div className="jd-empty-icon"><Search size={20} /></div>
+              <div>
+                <span className="section-kicker">STEP 2 · EVIDENCE ANALYSIS</span>
+                <h3>Turn a job description into a traceable evidence map.</h3>
+                <p>We'll identify documented skill matches, the most relevant projects, explicitly unverified requirements, and supporting evidence.</p>
+                <div className="jd-empty-points">
+                  <span>✓ Deterministic matching</span>
+                  <span>✓ Evidence-first output</span>
+                  <span>✓ No hiring score</span>
+                </div>
+              </div>
+            </section>
+          )}
           {jdResult && (
             <>
               <div className="jd-metrics">
@@ -426,7 +514,7 @@ export default function App() {
 
               <section className="evidence-panel">
                 <div className="evidence-panel-head">
-                  <div><span className="section-kicker">TRACEABLE EVIDENCE</span><h3>Evidence & notes</h3></div>
+                  <div><span className="section-kicker">STEP 3 · TRACEABLE EVIDENCE</span><h3>Evidence & notes</h3></div>
                   <div className="evidence-panel-actions">
                     <span>{(jdResult.evidence || []).length + (jdResult.notes || []).length} items</span>
                     <button
