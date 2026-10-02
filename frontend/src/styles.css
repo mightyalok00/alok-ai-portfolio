@@ -55,3 +55,18 @@
 .jd-project-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .jd-project-tags em{font-style:normal;font-size:9px;line-height:1;padding:4px 6px;border-radius:999px;color:#9eaeff;background:#111a2c;border:1px solid #293a63}
 @media(max-width:650px){.result-block-compact ul{grid-template-columns:1fr}.jd-project-tags{max-width:100%}}
+
+/* Interactive recruiter skill evidence */
+.skill-evidence-button{width:100%;text-align:left;color:inherit;cursor:pointer;position:relative;transition:transform .15s,border-color .15s,background .15s}
+.skill-evidence-button:hover{transform:translateY(-2px);border-color:#445a96;background:#0e1623}
+.skill-evidence-button em{display:block;font-style:normal;color:#7f91e8;font-size:9px;margin-top:5px;opacity:.85}
+.skill-project-list{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.skill-project-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;text-align:left;border:1px solid #202c40;border-radius:12px;background:#090f18;color:#dce4ef;padding:12px 13px;transition:border-color .15s,background .15s,transform .15s}
+.skill-project-row:hover{border-color:#445a96;background:#0e1623;transform:translateY(-1px)}
+.skill-project-row>span:first-child{min-width:0}
+.skill-project-row strong{display:block;font-size:12px;line-height:1.35}
+.skill-project-row small{display:block;color:#66758d;font-size:9px;margin-top:4px}
+.skill-project-row>span:last-child{flex:0 0 auto;color:#8ea1ff;font-size:10px}
+.skill-modal{width:min(720px,100%)}
+.skill-modal .modal-description{margin-bottom:0}
+@media(max-width:560px){.skill-project-row{align-items:flex-start;flex-direction:column;gap:8px}}
