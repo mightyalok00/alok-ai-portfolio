@@ -103,3 +103,10 @@
 .model-status small{display:block;color:#66758a;font-size:9px;margin-top:3px}
 @media(max-width:950px){.chat-workspace{grid-template-columns:1fr}.chat-side-panel{display:grid;grid-template-columns:1fr 1fr}.chat-card{order:1}.chat-side-panel{order:2}}
 @media(max-width:650px){.chat-side-panel{grid-template-columns:1fr}.chat-purpose{align-items:flex-start;flex-direction:column}.chat-purpose>span{line-height:1.4}}
+
+
+/* JD-to-chat recruiter workflow */
+.chat-context-badge{display:inline-flex!important;width:max-content;margin-top:2px;padding:4px 7px;border:1px solid #30416e;border-radius:999px;color:#aab8ff!important;background:#111a2c}
+.evidence-panel-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.jd-chat-button{padding:7px 10px;font-size:10px}
+@media(max-width:560px){.evidence-panel-actions{justify-content:flex-start}.jd-chat-button{width:100%}}
