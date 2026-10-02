@@ -28,10 +28,12 @@ service = PortfolioService()
 
 @app.get("/api/health")
 def health() -> dict:
-    """Return local API and configured model information."""
+    """Return API status plus a real Ollama connectivity check."""
+    ollama_status = service.router.provider_for("health check").health()
     return {
         "status": "ok",
         "provider": "ollama",
+        "ollama_status": ollama_status,
         "ollama_base_url": settings.ollama_base_url,
         "models": {
             "general": settings.ollama_chat_model,
