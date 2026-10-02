@@ -19,10 +19,19 @@ import {
 const API = "";
 
 const QUICK = [
-  "Tell me about Alok.",
+  "Give me a concise recruiter summary of Alok.",
   "Which projects demonstrate Python?",
-  "Explain the Gradient Descent Mastery project.",
+  "What documented evidence supports Alok's machine learning skills?",
   "What is documented about Alok's FastAPI work?",
+];
+
+const RECRUITER_PROMPTS = [
+  ["Candidate snapshot", "Give me a concise recruiter summary of Alok using only documented portfolio evidence."],
+  ["Technical strengths", "What technical skills are documented, and which projects provide evidence for them?"],
+  ["Project fit", "Which documented projects are most relevant to a Python and machine learning role, and why?"],
+  ["Evidence gaps", "What information is not currently verified in Alok's portfolio, such as education or employment?"],
+  ["FastAPI evidence", "Explain the documented FastAPI work and point to the relevant project evidence."],
+  ["GenAI evidence", "What Generative AI work is actually documented in the portfolio?"],
 ];
 
 function ProjectCard({ project, onOpen }) {
@@ -77,15 +86,18 @@ export default function App() {
   const [interviewAnswer, setInterviewAnswer] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedSkill, setSelectedSkill] = useState(null);
+  const [apiHealth, setApiHealth] = useState(null);
   const bottom = useRef(null);
 
   useEffect(() => {
     Promise.all([
       fetch(`${API}/api/candidate`).then((r) => r.json()),
       fetch(`${API}/api/projects`).then((r) => r.json()),
-    ]).then(([profile, projectList]) => {
+      fetch(`${API}/api/health`).then((r) => r.json()),
+    ]).then(([profile, projectList, health]) => {
       setCandidate(profile);
       setProjects(projectList);
+      setApiHealth(health);
     }).catch(() => {});
   }, []);
 
@@ -260,11 +272,80 @@ export default function App() {
       {tab === "projects" && <section className="page-section"><div className="section-heading"><div><span className="section-kicker">PROJECT EXPLORER</span><h2>Portfolio projects</h2><p className="tool-intro">Open a project for its documented evidence and source links.</p></div></div><div className="project-grid">{projects.map((project) => <ProjectCard key={project.name} project={project} onOpen={setSelectedProject} />)}</div></section>}
 
       {tab === "chat" && (
-        <section className="chat-card">
-          <div className="chat-header"><div><strong>Recruiter Assistant</strong><span>Evidence-grounded • Local Ollama</span></div><button className="icon-button" onClick={clearChat}><Trash2 size={17} /></button></div>
-          <div className="quick-row">{QUICK.map((question) => <button key={question} onClick={() => sendMessage(question)}>{question}</button>)}</div>
-          <div className="messages">{messages.map((message, index) => <article key={index} className={`message ${message.role}`}><div className="message-label">{message.role === "assistant" ? "ALOK AI" : "RECRUITER"}</div><div className="message-body">{message.role === "assistant" ? <ReactMarkdown>{message.content || "Thinking…"}</ReactMarkdown> : message.content}</div></article>)}<div ref={bottom} /></div>
-          <form className="composer" onSubmit={(event) => { event.preventDefault(); sendMessage(); }}><input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about a project, technology, or documented experience..." disabled={loading} /><button type="submit" disabled={loading || !input.trim()}><Send size={17} /> Send</button></form>
+        <section className="chat-workspace">
+          <div className="chat-card">
+            <div className="chat-header">
+              <div>
+                <strong>Recruiter Assistant</strong>
+                <span>Evidence-grounded • Local Ollama • No hiring decision</span>
+              </div>
+              <button className="icon-button" type="button" onClick={clearChat} title="Clear conversation"><Trash2 size={17} /></button>
+            </div>
+
+            <div className="chat-purpose">
+              <div>
+                <span className="section-kicker">RECRUITER COPILOT</span>
+                <strong>Ask for evidence, not assumptions.</strong>
+              </div>
+              <span>Use the prompts below to scan the portfolio quickly.</span>
+            </div>
+
+            <div className="quick-row">
+              {QUICK.map((question) => (
+                <button type="button" key={question} onClick={() => sendMessage(question)} disabled={loading}>{question}</button>
+              ))}
+            </div>
+
+            <div className="messages">
+              {messages.map((message, index) => (
+                <article key={index} className={`message ${message.role}`}>
+                  <div className="message-label">{message.role === "assistant" ? "ALOK AI" : "RECRUITER"}</div>
+                  <div className="message-body">{message.role === "assistant" ? <ReactMarkdown>{message.content || "Thinking…"}</ReactMarkdown> : message.content}</div>
+                </article>
+              ))}
+              <div ref={bottom} />
+            </div>
+
+            <form className="composer" onSubmit={(event) => { event.preventDefault(); sendMessage(); }}>
+              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about a project, technology, or documented experience..." disabled={loading} />
+              <button type="submit" disabled={loading || !input.trim()}><Send size={17} /> {loading ? "Thinking…" : "Send"}</button>
+            </form>
+          </div>
+
+          <aside className="chat-side-panel">
+            <div className="chat-side-card">
+              <span className="section-kicker">RECRUITER PROMPTS</span>
+              <h3>Start with a focused question</h3>
+              <div className="prompt-list">
+                {RECRUITER_PROMPTS.map(([label, prompt]) => (
+                  <button type="button" key={label} onClick={() => sendMessage(prompt)} disabled={loading}>
+                    <strong>{label}</strong>
+                    <span>{prompt}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="chat-side-card">
+              <span className="section-kicker">PORTFOLIO CONTEXT</span>
+              <h3>What the AI can verify</h3>
+              <div className="context-stats">
+                <div><strong>{projectCount}</strong><span>projects</span></div>
+                <div><strong>{skillCount}</strong><span>skills</span></div>
+              </div>
+              <ul className="grounding-list">
+                <li>Uses candidate profile and project evidence.</li>
+                <li>Retrieves relevant portfolio documents when available.</li>
+                <li>Does not treat missing education or employment as verified.</li>
+                <li>Cannot make a hiring decision from the portfolio.</li>
+              </ul>
+              <div className="model-status">
+                <span>LOCAL MODEL ROUTING</span>
+                <strong>{apiHealth?.provider === "ollama" ? "Ollama connected" : "Checking connection…"}</strong>
+                <small>{apiHealth?.models?.general || "General model loading"}</small>
+              </div>
+            </div>
+          </aside>
         </section>
       )}
 
