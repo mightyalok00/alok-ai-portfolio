@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from app.config import settings
-from app.models import ChatRequest, InterviewRequest, JobMatchRequest
+from app.models import ChatRequest, InterviewRequest, JobMatchRequest, JobMatchResponse
 from app.services import PortfolioService
 
 app = FastAPI(
@@ -70,20 +70,12 @@ def chat(request: ChatRequest) -> StreamingResponse:
     )
 
 
-@app.post("/api/match-job")
-def match_job(request: JobMatchRequest) -> dict:
-    """Analyze a JD against documented portfolio evidence."""
-    raw = service.match_job(request.job_description)
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        return {
-            "matched_documented_skills": [],
-            "relevant_projects": [],
-            "evidence": [raw],
-            "requested_but_not_verified": [],
-            "notes": ["Local model returned non-JSON output; review the evidence."],
-        }
+@app.post("/api/match-job", response_model=JobMatchResponse)
+def match_job(request: JobMatchRequest) -> JobMatchResponse:
+    """Analyze a JD against deterministic, documented portfolio evidence."""
+    return JobMatchResponse.model_validate(
+        service.match_job(request.job_description)
+    )
 
 
 @app.post("/api/interview")
