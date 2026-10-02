@@ -142,6 +142,18 @@ alok-ai-portfolio/
 └── .gitignore
 ```
 
+## JD Analyzer pipeline
+
+The JD Analyzer is intentionally **evidence-first and deterministic**:
+
+1. The job description is normalized locally.
+2. Documented skills and project technologies are matched against the JD.
+3. Relevant projects are selected only from the verified portfolio dataset.
+4. Education, certification, and employment requirements are reported as **not verified** when the corresponding candidate data is empty.
+5. Ollama is not responsible for deciding whether a qualification exists, so model reasoning or malformed JSON cannot corrupt the analyzer response.
+6. The API response is validated with Pydantic before it reaches the frontend.
+
+This separation keeps the recruiter workflow grounded in `backend/data/candidate.json` and prevents local model output from inventing qualifications.
 ## Verification
 
 Backend tests:
