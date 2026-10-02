@@ -3,7 +3,7 @@ from collections.abc import Iterator
 
 from app.candidate import load_candidate
 from app.llm.router import ModelRouter
-from app.prompts import SYSTEM_PROMPT, build_context
+from app.prompts import SYSTEM_PROMPT, build_context, build_jd_context
 from app.rag.documents import load_documents
 from app.rag.retriever import retrieve
 
@@ -24,8 +24,13 @@ class PortfolioService:
             indent=2,
         )
 
-    def stream_chat(self, message: str, history: list[dict]) -> Iterator[str]:
-        """Stream a grounded answer with retrieved portfolio evidence."""
+    def stream_chat(
+        self,
+        message: str,
+        history: list[dict],
+        jd_context: dict | None = None,
+    ) -> Iterator[str]:
+        """Stream a grounded answer with optional authoritative JD analysis."""
         retrieved = retrieve(message, self.documents)
         history_text = "\n".join(
             f"{item['role'].upper()}: {item['content']}"
