@@ -1,180 +1,172 @@
-# Alok AI Portfolio — Ollama Edition v3
+# Alok AI Portfolio
 
-A recruiter-facing AI portfolio combining a modern React portfolio, FastAPI,
-local Ollama model routing, evidence retrieval, JD analysis, and interview coaching.
+An evidence-first AI portfolio for recruiters and technical reviewers. It combines a React/Vite interface, FastAPI services, transparent portfolio retrieval, and local Ollama models.
 
-## What is new in v3
+## What this project demonstrates
 
-- Professional portfolio homepage instead of a chatbot-only screen
-- Project Explorer
-- Recruiter AI Chat
-- Job Description Analyzer
-- Portfolio Interview Mode
-- Local model routing
-- Evidence-grounded prompting
-- Lightweight transparent local retrieval
-- Source links to GitHub/live demos
-- Evaluation test suite
-- React/Vite runtime fix
-- Python 3.14.7 target
-- No cloud LLM required for the core workflow
+- **Recruiter Mode** — compact candidate snapshot and skill evidence
+- **Project Explorer** — browse documented projects and open project evidence
+- **AI Recruiter Chat** — streaming, portfolio-grounded answers
+- **JD Analyzer** — compare a job description with documented evidence
+- **AI Interview Mode** — portfolio-grounded technical practice
+- **Local AI stack** — Ollama model routing without a hosted LLM for the core workflow
+- **Evidence policy** — the assistant distinguishes documented facts from missing information
 
-## Local stack
+## Architecture
 
 ```text
 React + Vite
-      |
-      v
-FastAPI
-  |       \
-  |        +--> JD Analyzer
-  |
-  +--> Retrieval --> Portfolio Evidence
-  |
-  +--> Model Router
-          |
-          +--> llama3.2:latest
-          +--> qwen2.5-coder:7b
-          +--> deepseek-r1:7b
-                    |
-                    v
-               Ollama
-                    |
-                    v
-              RTX 3050 6GB
+    │
+    ├── Recruiter Mode
+    ├── Project Explorer
+    ├── AI Chat
+    ├── JD Analyzer
+    └── Interview Mode
+             │
+             ▼
+          FastAPI
+             │
+       ┌─────┴────────┐
+       ▼              ▼
+ Portfolio Data    Retrieval
+       │              │
+       └──────┬───────┘
+              ▼
+        Model Router
+              │
+       ┌──────┼───────────────┐
+       ▼      ▼               ▼
+ llama3.2  qwen2.5-coder  deepseek-r1
+              │
+              ▼
+            Ollama
 ```
 
-## Your confirmed Ollama setup
+## Tech stack
 
-- Ollama 0.35.0
-- `http://localhost:11434`
-- `llama3.2:latest`
-- `qwen2.5-coder:7b`
-- `deepseek-r1:7b`
-- NVIDIA RTX 3050 6 GB
-- 24 GB RAM
-- Python 3.14.7
+| Layer | Technology |
+|---|---|
+| Frontend | React, Vite, React Markdown, Lucide |
+| Backend | FastAPI, Pydantic |
+| AI | Ollama |
+| Models | llama3.2, qwen2.5-coder, deepseek-r1 |
+| Retrieval | Lightweight transparent local retrieval |
+| Testing | Pytest |
+| Runtime | Python 3.14.7, Node.js |
 
-## Run
+## Local setup
 
-### Backend
+### 1. Ollama
+
+Make sure Ollama is running at:
+
+```text
+http://localhost:11434
+```
+
+Verify the configured models are available:
 
 ```powershell
-cd E:\alok-ai-portfolio-ollama-v3\backend
-py -3.14 -m venv .venv
+ollama list
+```
+
+### 2. Backend
+
+Open Terminal 1:
+
+```powershell
+cd E:\alok-ai-portfolio\backend
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-Copy-Item .env.example .env
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
-### Frontend
+API:
 
-Open another terminal:
+```text
+http://127.0.0.1:8000
+http://127.0.0.1:8000/docs
+```
+
+### 3. Frontend
+
+Open Terminal 2:
 
 ```powershell
-cd E:\alok-ai-portfolio-ollama-v3\frontend
+cd E:\alok-ai-portfolio\frontend
 npm install
 npm run dev
 ```
 
-Open the URL shown by Vite, normally:
+Open the Vite URL shown in the terminal.
 
-```text
-http://localhost:5173/
-```
+## API surface
 
-## Features
-
-### AI Chat
-
-Ask about documented projects, skills, technologies, and portfolio evidence.
-Responses stream from Ollama.
-
-### Project Explorer
-
-Browse project cards with technologies and source links.
-
-### JD Analyzer
-
-Paste a job description. The application returns:
-
-- documented skill matches
-- relevant projects
-- evidence
-- requested but not verified requirements
-- notes
-
-It does not produce a hiring verdict.
-
-### Interview Mode
-
-Choose a focus such as Python, SQL, ML, GenAI, or FastAPI. The local reasoning
-model generates a portfolio-grounded interview question and can coach a supplied answer.
+- `GET /api/health`
+- `GET /api/candidate`
+- `GET /api/projects`
+- `POST /api/chat`
+- `POST /api/match-job`
+- `POST /api/interview`
 
 ## Evidence policy
 
-The AI must not fabricate:
+The portfolio assistant must not invent:
 
-- CGPA
-- education
-- employment
+- education or CGPA
+- employment history
 - certifications
 - achievements
 - project metrics
 - responsibilities
-- technologies not supported by evidence
+- technologies that are not documented
 
-When information is missing, it should say that it is not documented.
+When evidence is missing, the application should state that it is not documented.
 
-LinkedIn is intentionally left empty until the exact profile is verified.
+The exact LinkedIn profile is intentionally not included until verified.
 
-## RAG roadmap
-
-The current retrieval layer is transparent and dependency-light. It can later be
-replaced with:
+## Repository structure
 
 ```text
-Sentence Transformers
-        ↓
-Embeddings
-        ↓
-Qdrant / Chroma
-        ↓
-Semantic retrieval
-        ↓
-Ollama
+alok-ai-portfolio/
+├── backend/
+│   ├── app/
+│   ├── data/
+│   ├── tests/
+│   └── requirements.txt
+├── frontend/
+│   ├── public/
+│   └── src/
+├── docs/
+├── notebooks/
+├── README.md
+└── .gitignore
 ```
 
-The service interface is already separated to make that migration straightforward.
+## Verification
 
-## Evaluation
-
-See `docs/evaluation.md`.
-
-Run:
+Backend tests:
 
 ```powershell
 cd backend
 pytest -q
 ```
 
-The tests cover:
+Frontend build:
 
-- candidate validation
-- API health
-- project endpoint
-- routing
-- retrieval
-- evidence policy
+```powershell
+cd frontend
+npm run build
+```
 
-## Important data note
+## Roadmap
 
-The profile intentionally leaves unverified personal/professional fields empty.
-Repository names are not treated as proof of employment, education, certification,
-or performance metrics.
+- GitHub repository evidence ingestion
+- richer project metrics backed by source evidence
+- optional recruiter resume download
+- optional voice interface
+- deployment with a cloud-hosted model when laptop-local Ollama is unavailable
 
-The project currently contains documented GitHub portfolio information supplied
-during development. A future GitHub ingestion step should fetch the actual README
-and source evidence for every repository before deployment.
+## Links
+
+- GitHub profile: https://github.com/mightyalok00
+- Portfolio repository: https://github.com/mightyalok00/alok-ai-portfolio
