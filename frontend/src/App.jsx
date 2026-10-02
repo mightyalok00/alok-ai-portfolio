@@ -1,0 +1,346 @@
+import React, { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import {
+  BriefcaseBusiness,
+  Github,
+  MessageSquare,
+  Search,
+  Send,
+  Sparkles,
+  Trash2,
+  UserRound,
+} from "lucide-react";
+
+const API = "";
+
+const QUICK = [
+  "Tell me about Alok.",
+  "Explain the Gradient Descent Mastery project.",
+  "Which projects demonstrate Python?",
+  "What is documented about Alok's FastAPI work?",
+];
+
+function ProjectCard({ project }) {
+  return (
+    <article className="project-card">
+      <div className="project-top">
+        <span className="project-dot" />
+        <span>PROJECT</span>
+      </div>
+      <h3>{project.name}</h3>
+      <p>{project.description}</p>
+      <div className="chips">
+        {project.technologies.slice(0, 5).map((tech) => (
+          <span key={tech}>{tech}</span>
+        ))}
+      </div>
+      <div className="project-actions">
+        {project.repository && (
+          <a href={project.repository} target="_blank" rel="noreferrer">
+            <Github size={15} /> GitHub
+          </a>
+        )}
+        {project.demo && (
+          <a href={project.demo} target="_blank" rel="noreferrer">
+            Live demo
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
+
+export default function App() {
+  const [candidate, setCandidate] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [tab, setTab] = useState("home");
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content:
+        "Hi! I'm Alok's AI portfolio representative. Ask me about documented projects, technologies, or experience.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [jd, setJd] = useState("");
+  const [jdResult, setJdResult] = useState(null);
+  const [focus, setFocus] = useState("machine learning");
+  const [interview, setInterview] = useState(null);
+  const [interviewAnswer, setInterviewAnswer] = useState("");
+  const bottom = useRef(null);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`${API}/api/candidate`).then((r) => r.json()),
+      fetch(`${API}/api/projects`).then((r) => r.json()),
+    ]).then(([profile, projectList]) => {
+      setCandidate(profile);
+      setProjects(projectList);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  async function sendMessage(value = input) {
+    const message = value.trim();
+    if (!message || loading) return;
+
+    const history = messages.slice(-8);
+    setMessages((items) => [...items, { role: "user", content: message }]);
+    setInput("");
+    setLoading(true);
+    setMessages((items) => [...items, { role: "assistant", content: "" }]);
+
+    try {
+      const response = await fetch(`${API}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, history }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const event = JSON.parse(line);
+          if (!event.token) continue;
+          setMessages((items) => {
+            const next = [...items];
+            next[next.length - 1] = {
+              role: "assistant",
+              content: next[next.length - 1].content + event.token,
+            };
+            return next;
+          });
+        }
+      }
+    } catch (error) {
+      setMessages((items) => {
+        const next = [...items];
+        next[next.length - 1] = {
+          role: "assistant",
+          content: `I couldn't connect to the local portfolio API. ${error.message}`,
+        };
+        return next;
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function analyzeJD() {
+    if (jd.trim().length < 20) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`${API}/api/match-job`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job_description: jd }),
+      });
+      setJdResult(await response.json());
+    } catch (error) {
+      setJdResult({ notes: [`Could not analyze JD: ${error.message}`] });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function startInterview(answer = "") {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API}/api/interview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          focus,
+          previous_answer: answer,
+          history: messages.slice(-6),
+        }),
+      });
+      setInterview(await response.json());
+      setInterviewAnswer("");
+    } catch (error) {
+      setInterview({ question: `Interview service error: ${error.message}` });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function clearChat() {
+    setMessages([
+      {
+        role: "assistant",
+        content: "Chat cleared. Ask me about the documented portfolio.",
+      },
+    ]);
+  }
+
+  const projectCount = candidate?.projects?.length || projects.length || 0;
+  const skillCount = candidate?.skills?.length || 0;
+
+  return (
+    <main className="app-shell">
+      <nav className="nav">
+        <button className="brand" onClick={() => setTab("home")}>
+          <span className="brand-mark">A</span>
+          <span>ALOK AI</span>
+        </button>
+        <div className="nav-tabs">
+          <button className={tab === "home" ? "active" : ""} onClick={() => setTab("home")}>Home</button>
+          <button className={tab === "projects" ? "active" : ""} onClick={() => setTab("projects")}>Projects</button>
+          <button className={tab === "chat" ? "active" : ""} onClick={() => setTab("chat")}>AI Chat</button>
+          <button className={tab === "jd" ? "active" : ""} onClick={() => setTab("jd")}>JD Analyzer</button>
+          <button className={tab === "interview" ? "active" : ""} onClick={() => setTab("interview")}>Interview</button>
+        </div>
+        <a className="github-link" href="https://github.com/mightyalok00" target="_blank" rel="noreferrer">
+          <Github size={17} /> GitHub
+        </a>
+      </nav>
+
+      {tab === "home" && (
+        <>
+          <section className="hero">
+            <div className="hero-copy">
+              <div className="eyebrow"><Sparkles size={15} /> LOCAL AI PORTFOLIO</div>
+              <h1>{candidate?.name || "Alok Agarwal"}</h1>
+              <h2>{candidate?.headline || "Data Scientist & Python Developer"}</h2>
+              <p>{candidate?.summary || "Explore documented data science, Python, machine learning, and AI projects."}</p>
+              <div className="hero-actions">
+                <button className="primary" onClick={() => setTab("chat")}><MessageSquare size={17} /> Chat with Alok AI</button>
+                <button className="secondary" onClick={() => setTab("projects")}><BriefcaseBusiness size={17} /> Explore Projects</button>
+              </div>
+            </div>
+            <div className="hero-profile">
+              <img
+                src="/profile.jpg"
+                alt="Alok Agarwal"
+              />
+              <div className="profile-label">
+                <strong>ALOK AGARWAL</strong>
+                <span>DATA SCIENTIST • PYTHON DEVELOPER</span>
+              </div>
+            </div>
+          </section>
+
+          <section className="stats">
+            <div><strong>{projectCount}+</strong><span>Projects</span></div>
+            <div><strong>{skillCount}+</strong><span>Documented skills</span></div>
+            <div><strong>3</strong><span>Local models</span></div>
+            <div><strong>100%</strong><span>Local core AI</span></div>
+          </section>
+
+          <section className="section">
+            <div className="section-heading">
+              <div><span className="section-kicker">FEATURED WORK</span><h2>Built with data, Python & AI</h2></div>
+              <button className="text-button" onClick={() => setTab("projects")}>View all →</button>
+            </div>
+            <div className="project-grid">
+              {projects.slice(0, 3).map((project) => <ProjectCard key={project.name} project={project} />)}
+            </div>
+          </section>
+        </>
+      )}
+
+      {tab === "projects" && (
+        <section className="page-section">
+          <div className="section-heading">
+            <div><span className="section-kicker">PROJECT EXPLORER</span><h2>Portfolio projects</h2></div>
+          </div>
+          <div className="project-grid">
+            {projects.map((project) => <ProjectCard key={project.name} project={project} />)}
+          </div>
+        </section>
+      )}
+
+      {tab === "chat" && (
+        <section className="chat-card">
+          <div className="chat-header">
+            <div><strong>Recruiter Assistant</strong><span>Evidence-grounded • Local Ollama</span></div>
+            <button className="icon-button" onClick={clearChat}><Trash2 size={17} /></button>
+          </div>
+          <div className="quick-row">
+            {QUICK.map((question) => <button key={question} onClick={() => sendMessage(question)}>{question}</button>)}
+          </div>
+          <div className="messages">
+            {messages.map((message, index) => (
+              <article key={index} className={`message ${message.role}`}>
+                <div className="message-label">{message.role === "assistant" ? "ALOK AI" : "RECRUITER"}</div>
+                <div className="message-body">
+                  {message.role === "assistant" ? <ReactMarkdown>{message.content || "Thinking…"}</ReactMarkdown> : message.content}
+                </div>
+              </article>
+            ))}
+            <div ref={bottom} />
+          </div>
+          <form className="composer" onSubmit={(event) => { event.preventDefault(); sendMessage(); }}>
+            <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ask about a project, technology, or documented experience..." disabled={loading} />
+            <button type="submit" disabled={loading || !input.trim()}><Send size={17} /> Send</button>
+          </form>
+        </section>
+      )}
+
+      {tab === "jd" && (
+        <section className="page-section tool-page">
+          <div className="section-heading"><div><span className="section-kicker">RECRUITER TOOL</span><h2>Job Description Analyzer</h2></div></div>
+          <p className="tool-intro">Paste a JD to compare its requirements with documented portfolio evidence. The tool does not make a hiring decision.</p>
+          <textarea className="jd-box" value={jd} onChange={(e) => setJd(e.target.value)} placeholder="Paste the job description here..." />
+          <button className="primary" onClick={analyzeJD} disabled={loading || jd.length < 20}><Search size={17} /> Analyze evidence</button>
+          {jdResult && (
+            <div className="result-grid">
+              <ResultBlock title="Documented skill matches" items={jdResult.matched_documented_skills} />
+              <ResultBlock title="Relevant projects" items={jdResult.relevant_projects} />
+              <ResultBlock title="Requested but not verified" items={jdResult.requested_but_not_verified} />
+              <ResultBlock title="Evidence & notes" items={[...(jdResult.evidence || []), ...(jdResult.notes || [])]} />
+            </div>
+          )}
+        </section>
+      )}
+
+      {tab === "interview" && (
+        <section className="page-section tool-page">
+          <div className="section-heading"><div><span className="section-kicker">INTERVIEW MODE</span><h2>Practice from your portfolio</h2></div></div>
+          <div className="focus-row">
+            {["machine learning", "Python", "SQL", "GenAI", "FastAPI"].map((item) => (
+              <button key={item} className={focus === item ? "selected" : ""} onClick={() => setFocus(item)}>{item}</button>
+            ))}
+          </div>
+          <button className="primary" onClick={() => startInterview()} disabled={loading}><UserRound size={17} /> Generate question</button>
+          {interview && (
+            <div className="interview-card">
+              <span className="section-kicker">QUESTION</span>
+              <h3>{interview.question}</h3>
+              <p><strong>Why it matters:</strong> {interview.why_it_matters}</p>
+              <textarea className="answer-box" value={interviewAnswer} onChange={(e) => setInterviewAnswer(e.target.value)} placeholder="Write your answer here..." />
+              <button className="secondary" onClick={() => startInterview(interviewAnswer)} disabled={loading || !interviewAnswer.trim()}>Evaluate & generate follow-up</button>
+              {interview.evaluation && <div className="evaluation"><strong>Coaching:</strong><p>{interview.evaluation}</p><strong>Follow-up:</strong><p>{interview.follow_up}</p></div>}
+            </div>
+          )}
+        </section>
+      )}
+
+      <footer>Alok AI • React + FastAPI + Ollama • Evidence-grounded local AI</footer>
+    </main>
+  );
+}
+
+function ResultBlock({ title, items = [] }) {
+  return (
+    <div className="result-block">
+      <h3>{title}</h3>
+      {items.length ? <ul>{items.map((item, i) => <li key={`${item}-${i}`}>{item}</li>)}</ul> : <p>None returned.</p>}
+    </div>
+  );
+}

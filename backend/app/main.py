@@ -1,0 +1,106 @@
+import json
+from collections.abc import Iterator
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+
+from app.config import settings
+from app.models import ChatRequest, InterviewRequest, JobMatchRequest
+from app.services import PortfolioService
+
+app = FastAPI(
+    title="Alok AI Portfolio API",
+    version="2.0.0",
+    description="Local Ollama-powered recruiter portfolio API.",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.frontend_origin],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+service = PortfolioService()
+
+
+@app.get("/api/health")
+def health() -> dict:
+    """Return local API and configured model information."""
+    return {
+        "status": "ok",
+        "provider": "ollama",
+        "ollama_base_url": settings.ollama_base_url,
+        "models": {
+            "general": settings.ollama_chat_model,
+            "technical": settings.ollama_code_model,
+            "reasoning": settings.ollama_reasoning_model,
+        },
+        "projects": len(service.candidate.projects),
+        "documents": len(service.documents),
+    }
+
+
+@app.get("/api/candidate")
+def candidate() -> dict:
+    """Return public portfolio data."""
+    return service.candidate.model_dump()
+
+
+@app.get("/api/projects")
+def projects() -> list[dict]:
+    """Return project cards for the portfolio explorer."""
+    return [project.model_dump() for project in service.candidate.projects]
+
+
+@app.post("/api/chat")
+def chat(request: ChatRequest) -> StreamingResponse:
+    """Stream an evidence-grounded recruiter response."""
+    history = [message.model_dump() for message in request.history]
+
+    def event_stream() -> Iterator[str]:
+        for chunk in service.stream_chat(request.message, history):
+            yield json.dumps({"token": chunk}, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="application/x-ndjson",
+    )
+
+
+@app.post("/api/match-job")
+def match_job(request: JobMatchRequest) -> dict:
+    """Analyze a JD against documented portfolio evidence."""
+    raw = service.match_job(request.job_description)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return {
+            "matched_documented_skills": [],
+            "relevant_projects": [],
+            "evidence": [raw],
+            "requested_but_not_verified": [],
+            "notes": ["Local model returned non-JSON output; review the evidence."],
+        }
+
+
+@app.post("/api/interview")
+def interview(request: InterviewRequest) -> dict:
+    """Generate the next evidence-grounded interview coaching turn."""
+    raw = service.interview(
+        request.focus,
+        request.previous_answer,
+        [message.model_dump() for message in request.history],
+    )
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return {
+            "question": raw,
+            "why_it_matters": "The local model returned an unstructured response.",
+            "evaluation": "No automatic evaluation was produced.",
+            "follow_up": "",
+            "evidence": [],
+        }
