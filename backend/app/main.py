@@ -109,6 +109,7 @@ def interview(request: InterviewRequest) -> dict:
         request.focus,
         request.previous_answer,
         [message.model_dump() for message in request.history],
+        request.jd_context.model_dump() if request.jd_context else None,
     )
     try:
         return json.loads(raw)
