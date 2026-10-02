@@ -484,9 +484,11 @@ export default function App() {
                 </div>
               </section>
 
-              <div className="jd-results-grid">
-                <ResultBlock title="Documented requirements" items={jdResult.matched_documented_skills} icon={CheckCircle2} tone="match" compact />
-                <section className="result-block result-block-projects">
+              <div className="jd-workflow-label"><span>01</span><strong>Requirement Match</strong><small>Requirements supported by documented portfolio data</small></div>
+              <ResultBlock title="Documented requirements" items={jdResult.matched_documented_skills} icon={CheckCircle2} tone="match" compact />
+
+              <div className="jd-workflow-label"><span>02</span><strong>Relevant Projects</strong><small>Projects that provide evidence for the matched requirements</small></div>
+              <section className="result-block result-block-projects">
                   <div className="result-title"><FolderKanban size={16} /><h3>Relevant projects</h3><span>{jdResult.relevant_projects?.length || 0}</span></div>
                   {jdResult.relevant_projects?.length ? (
                     <div className="jd-project-list">
@@ -518,10 +520,11 @@ export default function App() {
                     </div>
                   ) : <p className="empty-result">No relevant projects returned.</p>}
                 </section>
-              </div>
 
+              <div className="jd-workflow-label"><span>03</span><strong>Not Verified</strong><small>Requested information that the portfolio cannot currently confirm</small></div>
               <ResultBlock title="Not verified requirements" items={jdResult.requested_but_not_verified} icon={AlertTriangle} tone="warning" />
 
+              <div className="jd-workflow-label"><span>04</span><strong>Traceable Evidence</strong><small>Source-backed evidence and verification notes behind the analysis</small></div>
               <section className="evidence-panel">
                 <div className="evidence-panel-head">
                   <div>
@@ -572,6 +575,23 @@ export default function App() {
                     </div>
                   </section>
                 </div>
+              </section>
+              <section className="jd-discuss-step">
+                <div>
+                  <span className="jd-discuss-number">05</span>
+                  <div><strong>Discuss with AI</strong><small>Ask follow-up questions using this exact JD analysis as grounded context.</small></div>
+                </div>
+                <button
+                  className="primary"
+                  type="button"
+                  onClick={() => {
+                    setJdContext({ job_description: jd, result: jdResult });
+                    setTab("chat");
+                    setMessages((items) => [...items, { role: "assistant", content: "JD context loaded. I can now answer follow-up questions using this analysis, the documented portfolio evidence, and the explicitly unverified requirements." }]);
+                  }}
+                >
+                  <MessageSquare size={15} /> Discuss with AI
+                </button>
               </section>
             </>
           )}
