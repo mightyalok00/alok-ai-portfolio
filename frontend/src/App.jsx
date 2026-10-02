@@ -129,6 +129,9 @@ export default function App() {
         for (const line of lines) {
           if (!line.trim()) continue;
           const event = JSON.parse(line);
+          if (event.error) {
+            throw new Error(event.error);
+          }
           if (!event.token) continue;
           setMessages((items) => {
             const next = [...items];
@@ -341,7 +344,7 @@ export default function App() {
               </ul>
               <div className="model-status">
                 <span>LOCAL MODEL ROUTING</span>
-                <strong>{apiHealth?.provider === "ollama" ? "Ollama connected" : "Checking connection…"}</strong>
+                <strong>{apiHealth?.ollama_status === "connected" ? "Ollama connected" : apiHealth?.ollama_status || "Checking connection…"}</strong>
                 <small>{apiHealth?.models?.general || "General model loading"}</small>
               </div>
             </div>
