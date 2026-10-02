@@ -108,15 +108,16 @@ export default function App() {
     const message = value.trim();
     if (!message || loading) return;
     const history = messages.slice(-8);
-    const groundedMessage = jdContext
-      ? message + "\n\nJD ANALYSIS CONTEXT:\n" +
-        "Job description:\n" + jdContext.job_description + "\n\n" +
-        "Documented matches:\n" + (jdContext.result.matched_documented_skills || []).join(", ") + "\n\n" +
-        "Relevant projects:\n" + (jdContext.result.relevant_projects || []).join(", ") + "\n\n" +
-        "Not verified:\n" + (jdContext.result.requested_but_not_verified || []).join(", ") + "\n\n" +
-        "Evidence:\n" + (jdContext.result.evidence || []).join("\n") + "\n\n" +
-        "Analyzer notes:\n" + (jdContext.result.notes || []).join("\n")
-      : message;
+    const jdAnalysis = jdContext
+      ? {
+          job_description: jdContext.job_description,
+          matched_documented_skills: jdContext.result.matched_documented_skills || [],
+          relevant_projects: jdContext.result.relevant_projects || [],
+          requested_but_not_verified: jdContext.result.requested_but_not_verified || [],
+          evidence: jdContext.result.evidence || [],
+          notes: jdContext.result.notes || [],
+        }
+      : null;
     setMessages((items) => [...items, { role: "user", content: message }, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
@@ -124,7 +125,7 @@ export default function App() {
       const response = await fetch(`${API}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: groundedMessage, history }),
+        body: JSON.stringify({ message, history, jd_context: jdAnalysis }),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const reader = response.body.getReader();
@@ -291,7 +292,7 @@ export default function App() {
               <div>
                 <strong>Recruiter Assistant</strong>
                 <span>Evidence-grounded • Local Ollama • No hiring decision</span>
-                {jdContext && <small className="chat-context-badge">JD context active • {jdContext.result.relevant_projects?.length || 0} relevant projects</small>}
+                {jdContext && <div className="chat-context-row"><small className="chat-context-badge">JD context active • {jdContext.result.relevant_projects?.length || 0} relevant projects</small><button className="text-button chat-context-clear" type="button" onClick={() => setJdContext(null)}>Clear JD context</button></div>}
               </div>
               <button className="icon-button" type="button" onClick={clearChat} title="Clear conversation"><Trash2 size={17} /></button>
             </div>
