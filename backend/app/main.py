@@ -1,13 +1,14 @@
 import json
 from collections.abc import Iterator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from app.config import settings
 from app.models import ChatRequest, InterviewRequest, JobMatchRequest, JobMatchResponse
 from app.services import PortfolioService
+from app.jd_matcher import looks_like_question
 
 app = FastAPI(
     title="Alok AI Portfolio API",
@@ -81,6 +82,17 @@ def chat(request: ChatRequest) -> StreamingResponse:
 @app.post("/api/match-job", response_model=JobMatchResponse)
 def match_job(request: JobMatchRequest) -> JobMatchResponse:
     """Analyze a JD against deterministic, documented portfolio evidence."""
+    if looks_like_question(request.job_description):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "jd_question_input",
+                "message": (
+                    "This looks like a question rather than a job description. "
+                    "Paste the actual JD here, or use AI Chat for questions about an existing analysis."
+                ),
+            },
+        )
     return JobMatchResponse.model_validate(
         service.match_job(request.job_description)
     )
