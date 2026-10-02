@@ -108,6 +108,15 @@ export default function App() {
     const message = value.trim();
     if (!message || loading) return;
     const history = messages.slice(-8);
+    const groundedMessage = jdContext
+      ? message + "\n\nJD ANALYSIS CONTEXT:\n" +
+        "Job description:\n" + jdContext.job_description + "\n\n" +
+        "Documented matches:\n" + (jdContext.result.matched_documented_skills || []).join(", ") + "\n\n" +
+        "Relevant projects:\n" + (jdContext.result.relevant_projects || []).join(", ") + "\n\n" +
+        "Not verified:\n" + (jdContext.result.requested_but_not_verified || []).join(", ") + "\n\n" +
+        "Evidence:\n" + (jdContext.result.evidence || []).join("\n") + "\n\n" +
+        "Analyzer notes:\n" + (jdContext.result.notes || []).join("\n")
+      : message;
     setMessages((items) => [...items, { role: "user", content: message }, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
