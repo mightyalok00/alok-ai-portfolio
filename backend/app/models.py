@@ -79,6 +79,7 @@ class InterviewRequest(BaseModel):
     focus: str = Field(default="machine learning", max_length=300)
     previous_answer: str = Field(default="", max_length=6000)
     history: list[ChatMessage] = Field(default_factory=list)
+    jd_context: JDAnalysisContext | None = None
 
 
 class InterviewResponse(BaseModel):
